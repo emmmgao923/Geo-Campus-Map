@@ -9,22 +9,22 @@ const campusBounds = [
   [-72.51188899993988, 42.393395354513274],
 ];
 
-const buildingEvents = {
-  bldg_005_1: [
-    { category: "study" },
-    { category: "study" },
-  ],
-  bldg_007: [
-    { category: "study" },
-    { category: "study" },
-    { category: "emergency"},
-  ],
-  bldg_001:[
-    { category: "study" },
-    { category: "announcement"},
-    { category: "activity"},
-  ]
-};
+// const buildingEvents = {
+//   bldg_005_1: [
+//     { category: "study" },
+//     { category: "study" },
+//   ],
+//   bldg_007: [
+//     { category: "study" },
+//     { category: "study" },
+//     { category: "emergency"},
+//   ],
+//   bldg_001:[
+//     { category: "study" },
+//     { category: "announcement"},
+//     { category: "activity"},
+//   ]
+// };
 
 
 const CATEGORY_ICON = {
@@ -32,9 +32,10 @@ const CATEGORY_ICON = {
   activity: "pin-activity",
   food:  "pin-food",
   emergency: "pin-emergency",
-  announcement: "pin-announcement",
+  notice: "pin-announcement",
 };
 
+const API_BASE = "http://localhost:8000/api/events"; 
 
 
 function randomPointInPolygon(geometry, maxTries = 40) {
@@ -142,6 +143,27 @@ function MapView() {
         return;
       }
 
+
+       const buildingEvents = {};
+
+        await Promise.all(
+            buildingsData.features.map(async (feature) => {
+            const bId = feature?.properties?.id;
+            if (!bId) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/${bId}`);
+                if (!res.ok) return;
+
+                const events = await res.json();
+                if (events && events.length) {
+                buildingEvents[bId] = events;
+                }
+            } catch (e) {
+                console.error("Failed to fetch events for building:", bId, e);
+            }
+            })
+        );
       const emojiPinFeatures = [];
 
       buildingsData.features.forEach((feature) => {
@@ -153,7 +175,7 @@ function MapView() {
         if (!events || !events.length) return;
 
         events.forEach((evt, index) => {
-          const iconId = CATEGORY_ICON[evt.category] || "pin-study";
+          const iconId = CATEGORY_ICON[evt.type] || "pin-study";
 
           const p = randomPointInPolygon(feature.geometry);
           if (!p) return;
