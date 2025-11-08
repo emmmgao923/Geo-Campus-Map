@@ -108,6 +108,34 @@ html, body, #root {
   inset: 0;
 }
 
+
+.floating-pin--float {
+  animation:
+    pin-pop-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+    pin-float 2.4s ease-in-out 0.32s infinite;
+}
+
+@keyframes pin-pop-in {
+  0% {
+    transform: translateY(10px) scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px) scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pin-float {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
 /* Search */
 .search {
   position: relative;
