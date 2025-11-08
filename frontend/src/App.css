@@ -1,1 +1,180 @@
+/* Base layout */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: #0f172a;
+}
 
+.app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.topbar-inner {
+  height: 64px;
+  max-width: 1200px;     /* 控制整体宽度，创造左右留白 */
+  margin: 0 auto;        /* 居中，外部自然留白 */
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr 2fr auto; /* 左 logo，中搜索，右头像 */
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  cursor: pointer;
+  user-select: none;
+}
+
+.logo-mark {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.topbar-middle {
+  display: flex;
+  justify-content: center;
+}
+
+/* Avatar */
+.avatar {
+  height: 36px;
+  width: 36px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.avatar span { font-weight: 600; }
+
+/* Page area */
+.page {
+  flex: 1;
+  background: #fafafa;
+}
+
+.page-container {
+  max-width: 1200px;     /* 与 topbar 对齐，形成左右留白 */
+  margin: 16px auto;     /* 顶部/底部距离、左右居中 */
+  padding: 0 16px;
+}
+
+/* Map card keeps rounded container with whitespace on both sides */
+.map-card {
+  position: relative;
+  height: calc(100vh - 64px - 32px); /* 全屏高度减去顶部栏和外边距 */
+  min-height: 520px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden; /* 让内层绝对定位的 map 填满并裁剪圆角 */
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.06);
+}
+
+/* Map container from MapView */
+.map-container {
+  position: absolute;
+  inset: 0;
+}
+
+/* Search */
+.search {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25);
+}
+
+.search-panel {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 320px;
+  display: grid;
+  padding: 6px;
+  gap: 6px;
+}
+
+.search-item {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #fff;
+  cursor: pointer;
+}
+
+.search-item:hover {
+  background: #f8fafc;
+  border-color: #e5e7eb;
+}
+
+/* Panel for profile page */
+.panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 20px rgba(2, 6, 23, 0.06);
+}
+
+.panel-title {
+  margin: 0 0 12px 0;
+}
+
+.panel-body {}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.profile-avatar {
+  height: 56px;
+  width: 56px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  display: grid;
+  place-items: center;
+  background: #f1f5f9;
+  font-weight: 700;
+}
+
+.profile-name { font-weight: 600; }
+.profile-email { color: #475569; font-size: 14px; }
+.muted { color: #6b7280; font-size: 14px; }

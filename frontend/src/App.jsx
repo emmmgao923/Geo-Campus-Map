@@ -1,14 +1,17 @@
-import { useRef, useEffect, useState } from 'react'
-import MapView from "./components/MapView.jsx";
-import './App.css'
-import React from "react";
+import React from 'react'
+import { Routes, Route } from 'react-router-dom'
+import Header from './components/Header.jsx'
+import MapPage from './pages/MapPage.jsx'
+import ProfilePage from './pages/ProfilePage.jsx'
 
-function App() {
+export default function App() {
   return (
-    <div className="app-root">
-      <MapView />
+    <div className="app">
+      <Header />
+      <Routes>
+        <Route path="/" element={<MapPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
     </div>
-  );
+  )
 }
-
-export default App;
