@@ -38,29 +38,29 @@ const CATEGORY_ICON = {
 
 
 function randomPointInPolygon(geometry, maxTries = 40) {
-  let poly;
+    let poly;
 
-  if (geometry.type === "Polygon") {
-    poly = geometry;
-  } else if (geometry.type === "MultiPolygon") {
-    poly = { type: "Polygon", coordinates: geometry.coordinates[0] };
-  } else {
-    return null;
-  }
-
-  const bbox = turf.bbox(poly);
-
-  for (let i = 0; i < maxTries; i++) {
-    const p = turf.point([
-      bbox[0] + Math.random() * (bbox[2] - bbox[0]),
-      bbox[1] + Math.random() * (bbox[3] - bbox[1]),
-    ]);
-    if (turf.booleanPointInPolygon(p, poly)) {
-      return p;
+    if (geometry.type === "Polygon") {
+      poly = geometry;
+    } else if (geometry.type === "MultiPolygon") {
+      poly = { type: "Polygon", coordinates: geometry.coordinates[0] };
+    } else {
+      return null;
     }
-  }
 
-  return null;
+    const bbox = turf.bbox(poly);
+
+    for (let i = 0; i < maxTries; i++) {
+        const p = turf.point([
+        bbox[0] + Math.random() * (bbox[2] - bbox[0]),
+        bbox[1] + Math.random() * (bbox[3] - bbox[1]),
+        ]);
+        if (turf.booleanPointInPolygon(p, poly)) {
+        return p;
+        }
+    }
+
+    return null;
 }
 
 function loadIcon(map, name, url) {
@@ -219,7 +219,41 @@ function MapView() {
         updateMarkerVisibility();
 
         map.on("zoom", updateMarkerVisibility);
+
+const TARGET_ZOOM = 18; 
+const SIDE_PADDING_RATIO = 0.35; 
+
+map.on("click", "campus-buildings-hit", (e) => {
+  if (!e.features?.length) return;
+
+  const f = e.features[0];
+
+  let centerLngLat;
+
+  if (f.geometry && f.geometry.type === "Polygon") {
+    const center = turf.centerOfMass(f);
+    centerLngLat = center.geometry.coordinates;
+  } else {
+    centerLngLat = [e.lngLat.lng, e.lngLat.lat];
+  }
+
+  const targetZoom = Math.max(map.getZoom(), TARGET_ZOOM);
+  map.easeTo({
+    center: centerLngLat,
+    zoom: targetZoom,
+    duration: 800,
+    padding: {
+      left: window.innerWidth * SIDE_PADDING_RATIO,
+      right: 40,
+      top: 40,
+      bottom: 40,
+    }
+  });
+
+});
+
       
+
       map.on("mousemove", "campus-buildings-hit", (e) => {
         if (!e.features?.length) return;
         const f = e.features[0];
