@@ -23,13 +23,13 @@ html, body, #root {
 
 .topbar-inner {
   height: 64px;
-  max-width: 1200px;     /* 控制整体宽度，创造左右留白 */
-  margin: 0 auto;        /* 居中，外部自然留白 */
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 0 16px;
   display: grid;
-  grid-template-columns: 1fr 2fr auto; /* 左 logo，中搜索，右头像 */
+  grid-template-columns: 1fr 2fr auto;
   align-items: center;
-  gap: 16px;
+  gap: 12px; /* slightly tighter spacing between columns */
 }
 
 .logo {
@@ -44,10 +44,19 @@ html, body, #root {
 
 .topbar-middle {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end; /* align search bar to the right */
 }
 
-/* Avatar */
+.search-container {
+  justify-self: end;      /* push search bar to the far right of its grid cell */
+  margin-right: 24px;     /* space between search bar and avatar */
+  max-width: 280px;       /* ensure consistent width */
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Avatar button */
 .avatar {
   height: 36px;
   width: 36px;
@@ -58,8 +67,16 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
-.avatar span { font-weight: 600; }
+
+.avatar span {
+  font-weight: 600;
+}
+
+.avatar:hover {
+  background: #ebebeb;
+}
 
 /* Page area */
 .page {
@@ -68,15 +85,15 @@ html, body, #root {
 }
 
 .page-container {
-  max-width: 1200px;     /* 与 topbar 对齐，形成左右留白 */
-  margin: 16px auto;     /* 顶部/底部距离、左右居中 */
+  max-width: 1200px; 
+  margin: 16px auto; 
   padding: 0 16px;
 }
 
 /* Map card keeps rounded container with whitespace on both sides */
 .map-card {
   position: relative;
-  height: calc(100vh - 64px - 32px); /* 全屏高度减去顶部栏和外边距 */
+  height: calc(100vh - 64px - 32px); 
   min-height: 520px;
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -164,6 +181,7 @@ html, body, #root {
   cursor: pointer;
 }
 
+
 .search-item:hover {
   background: #f8fafc;
   border-color: #e5e7eb;
@@ -206,3 +224,96 @@ html, body, #root {
 .profile-name { font-weight: 600; }
 .profile-email { color: #475569; font-size: 14px; }
 .muted { color: #6b7280; font-size: 14px; }
+/* floating hover card */
+.hover-card {
+  position: fixed;
+  z-index: 50;
+  width: 300px;
+  height: 260px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(2,6,23,0.14);
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.hover-card-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px 6px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.hover-title {
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hover-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hover-card-body {
+  flex: 1;
+  overflow: hidden;        /* auto-scrolling when not locked */
+  padding: 8px 10px;
+}
+
+.hover-card-body.is-locked {
+  overflow: auto;          /* allow manual scroll when pinned */
+}
+
+.hover-post {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #eef2f7;
+  margin-bottom: 6px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.hover-card-footer {
+  padding: 6px 10px 10px 10px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: #f8fafc;
+}
+.muted { color: #64748b; font-size: 12px; }
+
+.hover-card { position: fixed; z-index: 9999; width: 300px; height: 260px;
+  background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+  box-shadow:0 12px 24px rgba(2,6,23,0.14); display:flex; flex-direction:column; }
+.hover-card-header{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
+  padding:10px 12px 6px;border-bottom:1px solid #f1f5f9;}
+.hover-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hover-badge{padding:2px 8px;border-radius:999px;background:#f1f5f9;font-size:12px;font-weight:600;}
+.hover-card-body{flex:1;overflow:hidden;padding:8px 10px;}
+.hover-card-body.is-locked{overflow:auto;}
+.hover-post{padding:8px 10px;border-radius:8px;border:1px solid #eef2f7;margin-bottom:6px;background:#fff;font-size:14px;}
+.hover-card-footer{padding:6px 10px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}
+.btn-ghost{background:transparent;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;}
+.btn-ghost:hover{background:#f8fafc;}
+.muted{color:#64748b;font-size:12px;}

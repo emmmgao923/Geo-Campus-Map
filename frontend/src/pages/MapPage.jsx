@@ -1,14 +1,99 @@
-import React from 'react'
-import MapView from '../components/MapView.jsx'
+import { useState, useEffect } from "react";
+import MapView from "../components/MapView";
+import Sidebar from "../components/Sidebar";
+
+const PANEL_RATIO = 0.3333;
 
 export default function MapPage() {
+  const [hoveredBuilding, setHoveredBuilding] = useState(null);
+  const [pinnedBuilding, setPinnedBuilding] = useState(null); // NEW
+
+  const activeBuilding = pinnedBuilding ?? hoveredBuilding;     // NEW
+  const showSidebar = Boolean(activeBuilding);
+
+  useEffect(() => {
+    const onHover = (e) => {
+      // ignore hover updates while pinned
+      if (pinnedBuilding) return;                 // NEW
+      setHoveredBuilding(e.detail);
+    };
+
+    const onLeave = () => {
+      if (pinnedBuilding) return;                 // NEW
+      setHoveredBuilding(null);
+    };
+
+    const onPin = (e) => setPinnedBuilding(e.detail); // NEW
+
+    window.addEventListener("umass:building-hover", onHover);
+    window.addEventListener("umass:building-leave", onLeave);
+    window.addEventListener("umass:building-pin", onPin);       // NEW
+
+    return () => {
+      window.removeEventListener("umass:building-hover", onHover);
+      window.removeEventListener("umass:building-leave", onLeave);
+      window.removeEventListener("umass:building-pin", onPin);  // NEW
+    };
+  }, [pinnedBuilding]); // NEW: 依赖 pinnedBuilding，这样 pinned 时会暂停 hover/leave 的影响
+
+  // 可选：按 ESC 解除固定
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") setPinnedBuilding(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []); // 可删
+
   return (
-    <main className="page">
-      <div className="page-container">
-        <div className="map-card">
-          <MapView />
-        </div>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        padding: "40px 60px",
+        backgroundColor: "#fafafa",
+        height: "calc(100vh - 64px)",
+        boxSizing: "border-box",
+        width: "100%",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 1200,
+          height: "100%",
+          borderRadius: 16,
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          background: "white",
+        }}
+      >
+        <MapView />
+
+        {showSidebar && activeBuilding && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: `${Math.round(PANEL_RATIO * 100)}%`,
+              height: "100%",
+              background: "white",
+              borderRight: "1px solid #eee",
+              zIndex: 10,
+              boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
+              pointerEvents: "auto",
+            }}
+          >
+            <Sidebar
+              building={activeBuilding}
+              pinned={Boolean(pinnedBuilding)}                 // NEW（可选）
+              onUnpin={() => setPinnedBuilding(null)}          // NEW（可选）
+            />
+          </div>
+        )}
       </div>
-    </main>
-  )
+    </div>
+  );
 }
