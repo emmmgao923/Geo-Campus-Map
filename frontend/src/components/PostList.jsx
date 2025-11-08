@@ -32,70 +32,46 @@ const TYPE_FG = {
   other: "#111827",
 };
 
-// Demo data now includes summary/author/created_at
-function demoEvents(buildingId) {
-  const bid = String(buildingId || "unknown");
-  const now = Date.now();
-  return [
-    { _id: "demo1", building_id: bid, title: "Looking for study group", type: "study", likes_count: 3, summary: "CS 187 group forming this weekend.", author: "Alice", created_at: now - 3600e3 },
-    { _id: "demo2", building_id: bid, title: "Free pizza", type: "food", likes_count: 12, summary: "Grab a slice at 5pm in lobby.", author: "Bob", created_at: now - 2*3600e3 },
-    { _id: "demo3", building_id: bid, title: "Lost water bottle", type: "help", likes_count: 0, summary: "Blue Nalgene with stickers.", author: "Cathy", created_at: now - 3*3600e3 },
-    { _id: "demo4", building_id: bid, title: "Math tutoring drop-in", type: "study", likes_count: 5, summary: "Calc 2 help Tue/Thu evening.", author: "Dan", created_at: now - 4*3600e3 },
-    { _id: "demo5", building_id: bid, title: "Club fair booth setup", type: "activity", likes_count: 2, summary: "Volunteers needed tomorrow.", author: "Erin", created_at: now - 5*3600e3 },
-    { _id: "demo6", building_id: bid, title: "Found AirPods case", type: "notice", likes_count: 1, summary: "Describe stickers to claim.", author: "Frank", created_at: now - 6*3600e3 },
-    { _id: "demo7", building_id: bid, title: "Snack stash restocked", type: "food", likes_count: 7, summary: "Free granola bars at desk.", author: "Gina", created_at: now - 7*3600e3 },
-    { _id: "demo8", building_id: bid, title: "Coding challenge night", type: "activity", likes_count: 9, summary: "Bring your laptop. Prizes.", author: "Harry", created_at: now - 8*3600e3 },
-    { _id: "demo9", building_id: bid, title: "Quiet zone reminder", type: "notice", likes_count: 4, summary: "Please keep voices low.", author: "Ivy", created_at: now - 9*3600e3 },
-  ];
-}
-
 export default function PostList({
   buildingId,
+  events =  [],
   autoScroll = true,
   expanded = false,     // switch to expanded card layout
   filterType = null,    // filter by type key 
   bottomPadding = 0,
 }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
+
   const wrapRef = useRef(null);
   const timerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch events or fallback demo
-  useEffect(() => {
-    if (!buildingId) {
-      setEvents([]);
-      return;
-    }
-    let aborted = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/events?building_id=${encodeURIComponent(buildingId)}`);
-        if (!res.ok) throw new Error("bad status");
-        const data = await res.json();
-        if (!aborted) setEvents(Array.isArray(data) ? data : []);
-      } catch {
-        if (!aborted) setEvents(demoEvents(buildingId));
-      } finally {
-        if (!aborted) setLoading(false);
-      }
-    })();
-    return () => { aborted = true; };
-  }, [buildingId]);
+  const filtered = useMemo(() => {
+    if (!Array.isArray(events)) return [];
+    if (!filterType) return events;
+    const ft = String(filterType).toLowerCase();
+    return events.filter(
+      (e) => String(e.type || "").toLowerCase() === ft
+    );
+  }, [events, filterType]);
 
-  // Auto scroll until bottom then stop
   useEffect(() => {
     if (!autoScroll) return;
     const el = wrapRef.current;
     if (!el) return;
 
+    function stop() {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
     function start() {
       stop();
+      if (!filtered.length) return;
       timerRef.current = setInterval(() => {
-        if (!el) return;
-        const atBottom = el.scrollTop + el.clientHeight + 2 >= el.scrollHeight;
+        const atBottom =
+          el.scrollTop + el.clientHeight + 2 >= el.scrollHeight;
         if (atBottom) {
           stop();
         } else {
@@ -103,27 +79,24 @@ export default function PostList({
         }
       }, 18);
     }
-    function stop() {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
+
+
     start();
-    el.addEventListener("mouseenter", stop);
-    el.addEventListener("mouseleave", () => { if (!timerRef.current) start(); });
+    const handleEnter = () => stop();
+    const handleLeave = () => {
+      if (!timerRef.current) start();
+    };
+
+    el.addEventListener("mouseenter", handleEnter);
+    el.addEventListener("mouseleave", handleLeave);
+
     return () => {
       stop();
-      el.removeEventListener("mouseenter", stop);
-      el.removeEventListener("mouseleave", start);
+      el.removeEventListener("mouseenter", handleEnter);
+      el.removeEventListener("mouseleave", handleLeave);
     };
-  }, [events, autoScroll, buildingId]);
+  }, [filtered, autoScroll]);
 
-  // Apply filter (client-side)
-  const filtered = useMemo(() => {
-    if (!filterType) return events;
-    return events.filter((e) => String(e.type).toLowerCase() === String(filterType).toLowerCase());
-  }, [events, filterType]);
 
   // Render
   return (
@@ -135,11 +108,13 @@ export default function PostList({
     paddingBottom: bottomPadding,
     }}
     >
-      {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading events…</div>}
-      {!loading && filtered.length === 0 && (
-        <div style={{ padding: 8, color: "#6b7280" }}>No events.</div>
-      )}
-
+      
+      {buildingId && filtered.length === 0 && (
+      <div style={{ padding: 8, color: "#6b7280" }}>
+        Nothing happening here...
+      </div>
+       )}
+    
       {filtered.map((ev) => {
         const key = ev._id || ev.id;
         const type = String(ev.type || "other").toLowerCase();

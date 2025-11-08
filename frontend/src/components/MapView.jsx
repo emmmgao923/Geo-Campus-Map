@@ -284,12 +284,15 @@ map.on("click", "campus-buildings-hit", (e) => {
         if (hoveredId === buildingId) return;
         hoveredId = buildingId;
 
+        const events = buildingEvents[buildingId] || [];
+
         window.dispatchEvent(
           new CustomEvent("umass:building-hover", {
             detail: {
               id: buildingId,
               name: name,
               properties: f.properties,
+              events,
             },
           })
         );
@@ -307,12 +310,15 @@ map.on("click", "campus-buildings-hit", (e) => {
         const buildingId = f.properties.id;
         const name = f.properties.name;
 
+        const events = buildingEvents[buildingId] || [];
+
         window.dispatchEvent(
             new CustomEvent("umass:building-pin", {
             detail: {
                 id: buildingId,
                 name: name,
                 properties: f.properties,
+                events, 
             },
             })
         );

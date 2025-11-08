@@ -15,9 +15,9 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
     building?.properties?.name ?? building?.name ?? "Building";
   const buildingId =
     building?.id ??
-    building?._id ??
-    building?.properties?.id ??
-    building?.properties?._id;
+    building?.properties?.id;
+
+  const events = building?.events ?? [];
 
   const scrollRef = useRef(null);
   const timerRef = useRef(null);
@@ -199,7 +199,10 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
             scrollBehavior: pinned ? "smooth" : "auto",
           }}
         >
-          <PostList buildingId={buildingId} />
+          <PostList 
+          buildingId={buildingId} 
+          events={events}
+           />
         </div>
       </motion.aside>
     </AnimatePresence>
