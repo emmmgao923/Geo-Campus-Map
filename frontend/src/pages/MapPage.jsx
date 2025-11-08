@@ -72,17 +72,18 @@ export default function MapPage() {
       >
         <MapView />
 
-        {showSidebar && activeBuilding && (
+        {/* {showSidebar && activeBuilding && ( */}
+        {showSidebar && (
           <div
             style={{
               position: "absolute",
               inset: 0,
               width: `${Math.round(PANEL_RATIO * 100)}%`,
               height: "100%",
-              background: "white",
-              borderRight: "1px solid #eee",
+              background: "transparent",
+              // borderRight: "1px solid #eee",
               zIndex: 10,
-              boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
+              // boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
               pointerEvents: "auto",
             }}
           >
