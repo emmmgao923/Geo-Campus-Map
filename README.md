@@ -1,8 +1,16 @@
-# Install Instruction
-    In ./frontend/ run: 
+# Install Instructions
+    In .\frontend\ run: 
         npm install
+
+    In .\backend\ run:
+        pip install -r requirements.txt
+
+# Run Instructions
+    In .\frontend\ run: 
         npm run dev
 
+    In .\backend\ run:
+        uvicorn app.main:app --reload
 
 
 
