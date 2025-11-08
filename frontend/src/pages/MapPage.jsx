@@ -39,7 +39,7 @@ export default function MapPage() {
   // 可选：按 ESC 解除固定
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape") setPinnedBuilding(null);
+      if (e.key === "Escape") {setPinnedBuilding(null); setHoveredBuilding(null);};
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -89,7 +89,7 @@ export default function MapPage() {
             <Sidebar
               building={activeBuilding}
               pinned={Boolean(pinnedBuilding)}                 // NEW（可选）
-              onUnpin={() => setPinnedBuilding(null)}          // NEW（可选）
+              onUnpin={() => {setPinnedBuilding(null); setHoveredBuilding(null);}}          // NEW（可选）
             />
           </div>
         )}

@@ -252,8 +252,7 @@ map.on("click", "campus-buildings-hit", (e) => {
 
 });
 
-      
-
+    
       map.on("mousemove", "campus-buildings-hit", (e) => {
         if (!e.features?.length) return;
         const f = e.features[0];
