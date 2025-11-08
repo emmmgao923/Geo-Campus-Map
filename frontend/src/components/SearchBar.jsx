@@ -2,12 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 
 /**
  * Compact typeahead for buildings.
- * - Keeps the existing visual style of your search bar.
- * - Fetches /UmassBuildings.geojson once and filters by name.
- * - Shows a dropdown (using existing .search-panel / .search-item styles).
- * - On select (click or Enter), emits "umass:building-hover" with the matched feature's data.
+ * - Visual style unchanged.
+ * - Accepts a placeholder prop (e.g., "Search post..." on detail pages).
  */
-export default function SearchBar() {
+export default function SearchBar({ placeholder = "Search buildings..." }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [buildings, setBuildings] = useState([]);
@@ -21,20 +19,14 @@ export default function SearchBar() {
       .then((data) => {
         if (!alive) return;
         const feats = Array.isArray(data?.features) ? data.features : [];
-        // Normalize minimal fields used by the UI
         const rows = feats
           .map((f, i) => {
             const props = f?.properties || {};
-            const id =
-              f?.id ??
-              props?.id ??
-              props?._id ??
-              `${props?.name ?? "b"}-${i}`;
+            const id = f?.id ?? props?.id ?? props?._id ?? `${props?.name ?? "b"}-${i}`;
             const name = props?.name ?? "Unknown building";
             return { id, name, properties: props };
           })
           .filter((x) => !!x.name);
-        // De-duplicate by name (optional)
         const seen = new Set();
         const unique = rows.filter((r) => {
           const k = r.name.toLowerCase().trim();
@@ -45,30 +37,22 @@ export default function SearchBar() {
         setBuildings(unique);
       })
       .catch(() => setBuildings([]));
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   // Simple case-insensitive filtering
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return [];
-    return buildings
-      .filter((b) => b.name.toLowerCase().includes(s))
-      .slice(0, 8); // limit
+    return buildings.filter((b) => b.name.toLowerCase().includes(s)).slice(0, 8);
   }, [q, buildings]);
 
-  // Emit your existing hover event so Sidebar updates
+  // Emit hover event so Sidebar updates
   const selectBuilding = (row) => {
     if (!row) return;
     window.dispatchEvent(
       new CustomEvent("umass:building-hover", {
-        detail: {
-          id: row.id,
-          name: row.name,
-          properties: row.properties,
-        },
+        detail: { id: row.id, name: row.name, properties: row.properties },
       })
     );
     setQ(row.name);
@@ -83,9 +67,7 @@ export default function SearchBar() {
       setActiveIndex((i) => (i + 1) % results.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) =>
-        i - 1 < 0 ? results.length - 1 : i - 1
-      );
+      setActiveIndex((i) => (i - 1 + results.length) % results.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
       selectBuilding(results[activeIndex] || results[0]);
@@ -111,13 +93,9 @@ export default function SearchBar() {
     >
       <input
         type="text"
-        placeholder="Search buildings..."
+        placeholder={placeholder}          // NEW
         value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
-          setActiveIndex(0);
-        }}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); setActiveIndex(0); }}
         onFocus={() => results.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 120)} // allow click
         onKeyDown={onKeyDown}
@@ -161,11 +139,8 @@ export default function SearchBar() {
               onMouseDown={(e) => e.preventDefault()} // keep focus
               onClick={() => selectBuilding(row)}
               style={{
-                /* highlight active item with a subtle background */
-                background:
-                  idx === activeIndex ? "#f8fafc" : "#fff",
-                borderColor:
-                  idx === activeIndex ? "#e5e7eb" : "transparent",
+                background: idx === activeIndex ? "#f8fafc" : "#fff",
+                borderColor: idx === activeIndex ? "#e5e7eb" : "transparent",
               }}
               title={row.name}
             >
