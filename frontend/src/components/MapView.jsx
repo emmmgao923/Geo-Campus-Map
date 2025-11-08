@@ -78,12 +78,10 @@ function MapView() {
            if (!e.feature) return;
 
            if (feature) {
-            console.log("ok");
              map.setFeatureState(feature, { highlight: false });
            }
 
            feature = e.feature;
-           console.log("ok");
            map.setFeatureState(feature, { highlight: true });
          },
        });
@@ -93,7 +91,6 @@ function MapView() {
          handler: () => {
            if (feature) {
            map.setFeatureState(feature, { highlight: false });
-           console.log("ok");
              feature = null;
            }
            return false;
