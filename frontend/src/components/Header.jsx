@@ -14,7 +14,7 @@ export default function Header() {
         </div>
 
         {/* Middle: Search */}
-        <div className="topbar-middle">
+        <div className="topbar-middle search-container">
           <SearchBar />
         </div>
 
