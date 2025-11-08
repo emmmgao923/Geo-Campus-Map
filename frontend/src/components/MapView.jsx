@@ -241,26 +241,27 @@ function MapView() {
       });
 
       map.on("mouseleave", "campus-buildings-hit", () => {
+        hoveredId = null;
         window.dispatchEvent(new Event("umass:building-leave"));
       });
 
-      // NEW: click a building to pin the sidebar
-map.on("click", "campus-buildings-hit", (e) => {
-  const f = e.features?.[0];
-  if (!f) return;
-  const buildingId = f.properties.id;
-  const name = f.properties.name;
+            // NEW: click a building to pin the sidebar
+        map.on("click", "campus-buildings-hit", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const buildingId = f.properties.id;
+        const name = f.properties.name;
 
-  window.dispatchEvent(
-    new CustomEvent("umass:building-pin", {
-      detail: {
-        id: buildingId,
-        name: name,
-        properties: f.properties,
-      },
-    })
-  );
-});
+        window.dispatchEvent(
+            new CustomEvent("umass:building-pin", {
+            detail: {
+                id: buildingId,
+                name: name,
+                properties: f.properties,
+            },
+            })
+        );
+        });
 
 
       map.addInteraction("move-handler", {
