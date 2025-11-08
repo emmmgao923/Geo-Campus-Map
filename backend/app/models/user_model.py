@@ -19,6 +19,8 @@ class UserPublic(BaseModel):
     username: str
     email: EmailStr
     created_at: datetime
+    level: int
+    credits: int
 
 # Internal model for user document stored in DB
 class UserInDB(BaseModel):
@@ -26,3 +28,5 @@ class UserInDB(BaseModel):
     email: EmailStr
     password_hash: str
     created_at: datetime = datetime.utcnow()
+    level: int
+    credits: int

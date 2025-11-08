@@ -1,24 +1,75 @@
-# Logs
-logs
-*.log
+# ----------- Python / FastAPI backend -----------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.egg-info/
+.env
+.envrc
+venv/
+.venv/
+instance/
+*.pid
+*.coverage
+.coverage*
+.pytest_cache/
+htmlcov/
+migrations/
+__init__.pyc
+
+# ----------- MongoDB / data -----------
+dump/
+*.bson
+*.json~  # temporary mongo exports
+
+# ----------- Node / frontend (React + Vite) -----------
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+.vite/
+*.tsbuildinfo
+.cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+coverage/
 
-node_modules
-dist
-dist-ssr
-*.local
+# ----------- Logs -----------
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
 
-# Editor directories and files
+# ----------- Editor / IDE -----------
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ----------- OS / System -----------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ----------- Others -----------
+# Temporary files
+~$*
+*.tmp
+*.bak
+*.orig
+
+# Ignore local testing artifacts
+test_*.py
+test_*.json
