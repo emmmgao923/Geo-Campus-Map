@@ -30,7 +30,7 @@ const TYPE_FG = {
   other: "#111827",
 };
 
-// Demo data now includes summary/author/created_at
+// Demo data includes summary/author/created_at for expanded cards
 function demoEvents(buildingId) {
   const bid = String(buildingId || "unknown");
   const now = Date.now();
@@ -50,9 +50,10 @@ function demoEvents(buildingId) {
 export default function PostList({
   buildingId,
   autoScroll = true,
-  expanded = false,     // switch to expanded card layout
-  filterType = null,    // filter by type key 
-  bottomPadding = 0,
+  expanded = false,         // show summary + meta when true
+  filterType = null,        // filter by type key
+  bottomPadding = 0,        // extra empty space at bottom to avoid being covered by sticky footer
+  cardHeight,               // NEW: fixed card height (px); default depends on `expanded`
 }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,10 @@ export default function PostList({
   const timerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch events or fallback demo
+  // Default fixed height (tweak these to taste)
+  const CARD_H = cardHeight ?? (expanded ? 110 : 72);
+
+  // Fetch events or fallback to demo
   useEffect(() => {
     if (!buildingId) {
       setEvents([]);
@@ -83,7 +87,7 @@ export default function PostList({
     return () => { aborted = true; };
   }, [buildingId]);
 
-  // Auto scroll until bottom then stop
+  // Auto scroll until bottom then stop (only for hover card scenario)
   useEffect(() => {
     if (!autoScroll) return;
     const el = wrapRef.current;
@@ -117,21 +121,26 @@ export default function PostList({
     };
   }, [events, autoScroll, buildingId]);
 
-  // Apply filter (client-side)
+  // Apply client-side filter
   const filtered = useMemo(() => {
     if (!filterType) return events;
-    return events.filter((e) => String(e.type).toLowerCase() === String(filterType).toLowerCase());
+    return events.filter(
+      (e) => String(e.type).toLowerCase() === String(filterType).toLowerCase()
+    );
   }, [events, filterType]);
 
   // Render
   return (
-    <div 
-    ref={wrapRef} 
-    style={{ flex: 1,
-    overflowY: "auto", 
-    paddingTop: 8,
-    paddingBottom: bottomPadding,
-    }}
+    <div
+      ref={wrapRef}
+      style={{
+        flex: 1,
+        height: "100%",                // make this a real scroll box
+        overflowY: "auto",
+        overscrollBehavior: "contain", // keep wheel/touch inside this scroller
+        paddingTop: 8,
+        paddingBottom: bottomPadding,  // room for sticky footer
+      }}
     >
       {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading events…</div>}
       {!loading && filtered.length === 0 && (
@@ -163,11 +172,19 @@ export default function PostList({
               background: "#fff",
               cursor: "pointer",
               boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
+
+              // === fixed height layout ===
+              height: CARD_H,                  // fixed height
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: expanded ? "space-between" : "center",
+              gap: expanded ? 6 : 0,
             }}
             title={ev.title}
           >
-            {/* First line: [badge] Title .......... ❤️ likes */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* First row: [badge] Title .......... ❤️ likes */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto" }}>
               <span
                 style={{
                   fontSize: 12,
@@ -213,33 +230,35 @@ export default function PostList({
               </div>
             </div>
 
-            {/* Second line: summary (only when expanded) */}
-            {expanded && summary && (
+            {/* Second row: summary (expanded only) */}
+            {expanded && (
               <div
                 style={{
-                  marginTop: 6,
                   color: "#334155",
                   fontSize: 14,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  flex: "0 0 auto", // do not grow
+                  minHeight: 18,     // keep row height even if empty
                 }}
-                title={summary}
+                title={summary || " "}
               >
-                {summary}
+                {summary || " "}
               </div>
             )}
 
-            {/* Bottom meta: author · time (only when expanded) */}
+            {/* Bottom row: meta (expanded only) */}
             {expanded && (
               <div
                 style={{
-                  marginTop: 6,
                   color: "#64748b",
                   fontSize: 12,
                   display: "flex",
                   gap: 8,
                   alignItems: "center",
+                  flex: "0 0 auto", // do not grow
+                  minHeight: 16,     // keep row height stable
                 }}
               >
                 <span>by {author}</span>
