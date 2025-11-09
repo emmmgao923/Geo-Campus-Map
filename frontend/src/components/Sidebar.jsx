@@ -8,16 +8,19 @@ import { motion, AnimatePresence } from "framer-motion";
  * - Allows manual scrolling when pinned (click-to-pin mode).
  * - Resets scrollTop when the hovered building changes.
  */
-export default function Sidebar({ building, pinned = false, onUnpin }) {
-  if (!building) return null;
+export default function Sidebar({
+  building,
+  highlightEventId,
+  pinned = false,
+  onUnpin,
+  onMouseEnterSidebar,
+  onMouseLeaveSidebar,
+}) {
+  if (!building || !building.id) return null;
 
-  const name =
-    building?.properties?.name ?? building?.name ?? "Building";
-  const buildingId =
-    building?.id ??
-    building?.properties?.id;
-
-  const events = building?.events ?? [];
+  const name = building.name ?? building.properties?.name ?? "Building";
+  const buildingId = building.id ?? building.properties?.id;
+  const events = building.events ?? [];
 
   const scrollRef = useRef(null);
   const timerRef = useRef(null);
@@ -67,59 +70,67 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
 
 // ====== 分支 1：没有 building（刷新后地图未就绪/尚未 hover） ======
   // 显示一个占位 Sidebar：宽度固定、半透明白底，左→右淡入
-  if (!building) {
-    console.log("building is not loaded yet.")
-    return (
-      <AnimatePresence mode="wait">
-        <motion.aside
-          key="sidebar-placeholder"
-          initial={{ x: -300, opacity: 0, backgroundColor: "rgba(255,255,255,0)" }}
-          animate={{ x: 0, opacity: 0.9, backgroundColor: "rgba(255,255,255,0.9)" }}
-          exit={{ x: -300, opacity: 0, backgroundColor: "rgba(255,255,255,0)" }}
-          transition={{ type: "spring", stiffness: 120, damping: 18 }}
-          style={{
-            width: 300,            // 占位时给个固定宽度，避免布局跳动
-            height: "100%",
-            padding: 16,
-            display: "flex",
-            flexDirection: "column",
-            boxSizing: "border-box",
-            boxShadow: "4px 0 10px rgba(0,0,0,0.05)",
-            // boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
-            backdropFilter: "blur(2px)", // 轻微磨砂质感，视觉更柔和
-          }}
-        >
-          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8, color: "#334155" }}>
-            GeoCampus
-          </div>
-          <div style={{ color: "#6b7280", fontSize: 14 }}>
-            加载中… 将鼠标移动到建筑上查看帖子
-          </div>
+  // if (!building) {
+  //   console.log("building is not loaded yet.")
+  //   return (
+  //     <AnimatePresence mode="wait">
+  //       <motion.aside
+  //         key="sidebar-placeholder"
+  //         initial={{ x: -300, opacity: 0, backgroundColor: "rgba(255,255,255,0)" }}
+  //         animate={{ x: 0, opacity: 0.9, backgroundColor: "rgba(255,255,255,0.9)" }}
+  //         exit={{ x: -300, opacity: 0, backgroundColor: "rgba(255,255,255,0)" }}
+  //         transition={{ type: "spring", stiffness: 120, damping: 18 }}
+  //         onMouseEnter={(e) => {
+  //           e.stopPropagation(); // 阻止事件向下传递到 mapbox canvas
+  //           if (onMouseEnterSidebar) onMouseEnterSidebar();
+  //         }}
+  //         onMouseLeave={(e) => {
+  //           e.stopPropagation();
+  //           if (onMouseLeaveSidebar) onMouseLeaveSidebar();
+  //         }}
+  //         style={{
+  //           width: 300,            // 占位时给个固定宽度，避免布局跳动
+  //           height: "100%",
+  //           padding: 16,
+  //           display: "flex",
+  //           flexDirection: "column",
+  //           boxSizing: "border-box",
+  //           boxShadow: "4px 0 10px rgba(0,0,0,0.05)",
+  //           // boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
+  //           backdropFilter: "blur(2px)", // 轻微磨砂质感，视觉更柔和
+  //         }}
+  //       >
+  //         <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8, color: "#334155" }}>
+  //           GeoCampus
+  //         </div>
+  //         <div style={{ color: "#6b7280", fontSize: 14 }}>
+  //           加载中… 将鼠标移动到建筑上查看帖子
+  //         </div>
 
-          {/* 简易骨架屏 */}
-          <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-            {[...Array(4)].map((_, i) => (
-              <div key={i} style={{
-                height: 64,
-                borderRadius: 12,
-                background: "linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer 1.2s infinite",
-              }}/>
-            ))}
-          </div>
+  //         {/* 简易骨架屏 */}
+  //         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+  //           {[...Array(4)].map((_, i) => (
+  //             <div key={i} style={{
+  //               height: 64,
+  //               borderRadius: 12,
+  //               background: "linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)",
+  //               backgroundSize: "200% 100%",
+  //               animation: "shimmer 1.2s infinite",
+  //             }}/>
+  //           ))}
+  //         </div>
 
-          {/* shimmer 动画（内联 keyframes） */}
-          <style>{`
-            @keyframes shimmer {
-              0% { background-position: 200% 0; }
-              100% { background-position: -200% 0; }
-            }
-          `}</style>
-        </motion.aside>
-      </AnimatePresence>
-    );
-  }
+  //         {/* shimmer 动画（内联 keyframes） */}
+  //         <style>{`
+  //           @keyframes shimmer {
+  //             0% { background-position: 200% 0; }
+  //             100% { background-position: -200% 0; }
+  //           }
+  //         `}</style>
+  //       </motion.aside>
+  //     </AnimatePresence>
+  //   );
+  // }
 
   // ====== 分支 2：有 building（正常展示 Sidebar） ======
   return (
@@ -130,6 +141,16 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
         animate={{ x: 0, opacity: 1, backgroundColor: "rgba(255,255,255,1)" }}
         exit={{ x: -300, opacity: 0, backgroundColor: "rgba(255,255,255,0)" }}
         transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        // onMouseEnter={(e) => {
+        //   e.stopPropagation();
+        //   onMouseEnterSidebar?.();
+        // }}
+        // onMouseLeave={(e) => {
+        //   e.stopPropagation();
+        //   onMouseLeaveSidebar?.();
+        // }}
+        onMouseEnter={onMouseEnterSidebar}
+        onMouseLeave={onMouseLeaveSidebar}
         style={{
           padding: 16,
           height: "100%",
@@ -139,6 +160,7 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
           boxSizing: "border-box",
           boxShadow: "4px 0 10px rgba(0,0,0,0.05)",
           // boxShadow: "2px 0 12px rgba(0,0,0,0.06)",
+          pointerEvents: "auto",
         }}
       >
         {/* 标题区 */}
@@ -202,6 +224,7 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
           <PostList 
           buildingId={buildingId} 
           events={events}
+          highlightEventId={highlightEventId}
            />
         </div>
       </motion.aside>

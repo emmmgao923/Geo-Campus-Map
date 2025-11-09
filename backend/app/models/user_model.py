@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
 
 # Incoming payload for user registration
@@ -19,8 +19,16 @@ class UserPublic(BaseModel):
     username: str
     email: EmailStr
     created_at: datetime
-    level: int
-    credits: int
+    level: int = 1
+    credits: int = 0
+    post_count: int = 0
+    like_received: int = 0
+    achievements: Dict[str, bool] = {
+        "first_post": False,
+        "ten_posts": False,
+        "first_like": False,
+        "hundred_like": False
+    }
 
 # Internal model for user document stored in DB
 class UserInDB(BaseModel):
@@ -28,5 +36,13 @@ class UserInDB(BaseModel):
     email: EmailStr
     password_hash: str
     created_at: datetime = datetime.utcnow()
-    level: int
-    credits: int
+    level: int = 1
+    credits: int = 0
+    post_count: int = 0                # 用户累计发帖数
+    like_received: int = 0             # 用户累计获赞数
+    achievements: Dict[str, bool] = {  # 各项成就解锁状态
+        "first_post": False,           # 第一次发帖
+        "ten_posts": False,            # 累计发10次帖
+        "first_like": False,            # 第一次获赞
+        "hundred_like": False
+    }
