@@ -15,28 +15,22 @@ import axios from "axios";
 function AppContent() {
   const { user } = useAuth(); // ✅ 从 context 获取当前登录用户
   const [achievement, setAchievement] = useState(null);
-
+  const userId = localStorage.getItem("user_id");
   useEffect(() => {
-    if (!user?.email) return; // ✅ 没登录就不轮询
-
+    if (!userId) return;
     const interval = setInterval(async () => {
-      try {
-        const res = await axios.get(
-          `http://127.0.0.1:8000/api/achievements/latest?user_id=${user.email}`
-        );
-        if (res.data.unlocked) {
-          const newAch = res.data.data[0];
-          setAchievement(newAch);
-          setTimeout(() => setAchievement(null), 4000);
-        }
-      } catch (err) {
-        console.error("Achievement check failed:", err);
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/achievements/latest`,{params: {user_id: userId}}
+      );
+      if (res.data.unlocked) {
+        const newAch = res.data.data[0];
+        setAchievement(newAch);
+        setTimeout(() => setAchievement(null), 4000);
       }
     }, 8000);
-
     return () => clearInterval(interval);
-  }, [user]);
-
+  }, [userId]);
+  
   return (
     <>
       <Header />

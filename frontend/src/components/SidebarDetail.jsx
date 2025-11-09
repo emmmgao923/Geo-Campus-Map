@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PostList from "./PostList";
 import buildingNames from "../data/buildings.json";
+import { useAuth } from "../context/AuthContext.jsx";
+
 
 function getBuildingName(buildingId) {
   if (!buildingId) return "Building";
@@ -13,6 +15,7 @@ const API_BASE = "http://localhost:8000/api/events";
 
 export default function SidebarDetail({ buildingId, selectedEventId }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   if (!buildingId) return null;
 
@@ -195,18 +198,25 @@ export default function SidebarDetail({ buildingId, selectedEventId }) {
 
       {/* Sticky 创建按钮 */}
       <div style={{ position: "sticky", bottom: BOTTOM_GAP, paddingTop: 8 }}>
-        <button
-          className="btn-primary"
-          style={{
-            width: "100%",
-            height: BUTTON_HEIGHT,
-            borderRadius: 10,
-            fontWeight: 600,
-          }}
-          onClick={openEditor}
-        >
-          Start a new post
-        </button>
+      <button
+        className="btn-primary"
+        disabled={!user} // ✅ 未登录禁用按钮
+        title={user ? "Start a new post" : "Sign in to post"}
+        onClick={() => {
+          if (!user) {
+            alert("Please sign in to create a post.");
+            return;
+          }
+          window.dispatchEvent(new Event("app:open-editor"));
+        }}
+        style={{
+          opacity: user ? 1 : 0.6,
+          cursor: user ? "pointer" : "not-allowed",
+        }}
+      >
+        {user ? "Start a new post" : "Sign in to post"}
+      </button>
+
       </div>
     </aside>
   );

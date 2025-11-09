@@ -13,7 +13,7 @@ async def upload_comments():
     db = client[DB_NAME]
 
     # 读取本地 JSON 文件
-    with open("data/comments_500.json", "r", encoding="utf-8") as f:
+    with open("data/comments_500_str.json", "r", encoding="utf-8") as f:
         comments = json.load(f)
 
     # 格式校验与处理
