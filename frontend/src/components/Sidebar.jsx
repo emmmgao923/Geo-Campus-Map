@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
  * - Allows manual scrolling when pinned (click-to-pin mode).
  * - Resets scrollTop when the hovered building changes.
  */
-export default function Sidebar({ building, pinned = false, onUnpin }) {
+export default function Sidebar({ building, highlightEventId, pinned = false, onUnpin }) {
   if (!building) return null;
 
   const name =
@@ -202,6 +202,7 @@ export default function Sidebar({ building, pinned = false, onUnpin }) {
           <PostList 
           buildingId={buildingId} 
           events={events}
+          highlightEventId={highlightEventId}
            />
         </div>
       </motion.aside>

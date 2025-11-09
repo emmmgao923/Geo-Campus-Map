@@ -3,29 +3,13 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import '../App.css'
 import * as turf from "@turf/turf";
+import { motion } from "framer-motion";
+import { createRoot } from "react-dom/client";
 
 const campusBounds = [
   [-72.52811100006191, 42.38660446181402],
   [-72.51188899993988, 42.393395354513274],
 ];
-
-// const buildingEvents = {
-//   bldg_005_1: [
-//     { category: "study" },
-//     { category: "study" },
-//   ],
-//   bldg_007: [
-//     { category: "study" },
-//     { category: "study" },
-//     { category: "emergency"},
-//   ],
-//   bldg_001:[
-//     { category: "study" },
-//     { category: "announcement"},
-//     { category: "activity"},
-//   ]
-// };
-
 
 const CATEGORY_ICON = {
   study: "pin-study",
@@ -74,8 +58,6 @@ function loadIcon(map, name, url) {
     });
   });
 }
-
-
 
 function MapView() {
   const mapRef = useRef();
@@ -189,6 +171,7 @@ function MapView() {
               buildingName: bName,
               category: evt.category,
               idx: index,
+              eventId: evt._id || evt.id,
             },
           });
         });
@@ -201,8 +184,6 @@ function MapView() {
        emojiPinFeatures.forEach((f) => {
         // 外层：给 Mapbox 用来定位，不能加 transform 动画
         const el = document.createElement("div");
-
-        // 内层：真正显示 pin + 动画
         const pin = document.createElement("div");
         pin.className = "floating-pin floating-pin--float";
         pin.style.backgroundImage = `url(/pins/${f.properties.iconId}.png)`;
@@ -219,6 +200,26 @@ function MapView() {
         })
             .setLngLat(f.geometry.coordinates)
             .addTo(map);
+
+        const payload = {
+            buildingId: f.properties.buildingId,
+            name: f.properties.buildingName,
+            eventId: f.properties.eventId,
+            // 把整栋楼的 events 也顺便塞过去，省得 MapPage 再查
+            events: buildingEvents[f.properties.buildingId] || [],
+        };
+
+        el.addEventListener("mouseenter", () => {
+            window.dispatchEvent(
+            new CustomEvent("umass:pin-hover", { detail: payload })
+            );
+        });
+
+        el.addEventListener("mouseleave", () => {
+            window.dispatchEvent(
+            new CustomEvent("umass:pin-leave", { detail: payload })
+            );
+        });
 
         markers.push(marker);
         });
@@ -303,7 +304,7 @@ map.on("click", "campus-buildings-hit", (e) => {
         window.dispatchEvent(new Event("umass:building-leave"));
       });
 
-            // NEW: click a building to pin the sidebar
+     // NEW: click a building to pin the sidebar
         map.on("click", "campus-buildings-hit", (e) => {
         const f = e.features?.[0];
         if (!f) return;
