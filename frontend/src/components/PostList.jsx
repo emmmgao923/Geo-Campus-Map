@@ -126,12 +126,13 @@ export default function PostList({
         const author = ev.author ?? "Anon";
         const created = ev.created_at ? new Date(ev.created_at) : null;
 
+
         const isHighlighted = (highlightEventId && key === highlightEventId) || key === hoveredId; // ✅
 
-        const goDetail = () => navigate(`/post/${encodeURIComponent(key)}`);
+        const goDetail = () => navigate(`/post/${buildingId}?eventId=${key}`);
 
         return (
-<motion.div
+          <motion.div
               key={key}
               role="button"
               tabIndex={0}

@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import SidebarDetail from "../components/SidebarDetail";
+import axios from "axios";
+import buildingNameMap from "../data/buildings.json";
+
+
+
+
 
 export default function PostDetailPage() {
-  const { postId } = useParams();
-  const [post, setPost] = useState(null);
+  const { buildingId } = useParams();
+  const [searchParams] = useSearchParams();         
+  const eventId = searchParams.get("eventId"); 
+  const [eventList, setEventList] = useState([]); // 左侧 SidebarDetail 使用
+  const [event, setEvent] = useState(null);   
   const [loading, setLoading] = useState(true);
 
   // right pane: simple local comment composer state
@@ -12,35 +21,27 @@ export default function PostDetailPage() {
   const [link, setLink] = useState("");
 
   useEffect(() => {
-    let aborted = false;
+    // ✅ 异步自调用函数
     (async () => {
       try {
-        const r = await fetch(`/api/posts/${encodeURIComponent(postId)}`);
-        if (!r.ok) throw new Error("bad status");
-        const data = await r.json();
-        if (!aborted) setPost(data);
-      } catch {
-        if (!aborted) {
-          setPost({
-            id: postId,
-            building: { id: "b-ilc", name: "ILC" },
-            title: "Lost umbrella in ILC",
-            summary: "I left a black umbrella on the 2nd floor near the stairs.",
-            createdAt: Date.now() - 3600e3,
-            comments: [
-              { id: "c1", author: "User 1", body: "This is a sample comment #1.", createdAt: Date.now() - 300000 },
-              { id: "c2", author: "User 2", body: "This is a sample comment #2.", createdAt: Date.now() - 200000 },
-            ],
-          });
-        }
+        const res = await axios.get(
+          `http://127.0.0.1:8000/api/events/${buildingId}`
+        );
+        const allEvents = res.data;
+        setEventList(allEvents); // ✅ 保存事件列表
+        const target = allEvents.find(e => e._id === eventId);
+        setEvent(target || null);
+      } catch (err) {
+        console.error("❌ 请求失败:", err);
       } finally {
-        if (!aborted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { aborted = true; };
-  }, [postId]);
+  }, [buildingId, eventId]); // ✅ 当 buildingId 或 eventId 变化时重新请求
 
-  const buildingName = post?.building?.name ?? "";
+
+  const buildingName = buildingNameMap[buildingId] || buildingId;
+  console.log(buildingName);
 
   const addComment = () => {
     const text = draft.trim();
@@ -51,7 +52,7 @@ export default function PostDetailPage() {
       body: link ? `${text} ${link}` : text,
       createdAt: Date.now(),
     };
-    setPost((p) => ({ ...p, comments: [item, ...(p?.comments || [])] }));
+    setEvent((p) => ({ ...p, comments: [item, ...(p?.comments || [])] }));
     setDraft("");
     setLink("");
   };
@@ -85,13 +86,16 @@ export default function PostDetailPage() {
       >
         {/* LEFT: allow child to define scroll (no overflow hidden) */}
         <div style={{ borderRight: "1px solid #eee", height: "100%", minHeight: 0, display: "flex" }}>
-          <SidebarDetail building={{ name: buildingName, id: post?.building?.id }} />
+          <SidebarDetail   
+            eventList={eventList}
+            buildingName={buildingName}  // 或者从上层传真实名字
+            buildingId={buildingId} />
         </div>
 
         {/* RIGHT: detail panel */}
         <div style={{ display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }}>
           {/* building name */}
-          <div style={{ padding: "16px 20px 0 20px", borderBottom: "1px solid #f1f5f9" }}>
+          {/* <div style={{ padding: "16px 20px 0 20px", borderBottom: "1px solid #f1f5f9" }}>
             <div
               style={{
                 fontWeight: 700,
@@ -105,7 +109,7 @@ export default function PostDetailPage() {
             >
               {buildingName}
             </div>
-          </div>
+          </div> */}
 
           {/* content split */}
           <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateRows: "auto 1fr auto" }}>
@@ -124,9 +128,9 @@ export default function PostDetailPage() {
                       color: "#0f172a",
                       lineHeight: 1.25,
                     }}
-                    title={post?.title}
+                    title={event?.title}
                   >
-                    {post?.title}
+                    {event?.title}
                   </h1>
 
                   <div
@@ -147,12 +151,12 @@ export default function PostDetailPage() {
                         textOverflow: "ellipsis",
                         maxWidth: "100%",
                       }}
-                      title={post?.summary}
+                      title={event?.summary}
                     >
-                      {post?.summary}
+                      {event?.summary}
                     </span>
                     <span>·</span>
-                    <time>{new Date(post?.createdAt || Date.now()).toLocaleString()}</time>
+                    <time>{new Date(event?.timestamp  || Date.now()).toLocaleString()}</time>
                   </div>
                 </>
               )}
@@ -165,7 +169,7 @@ export default function PostDetailPage() {
             <div style={{ padding: "12px 20px", overflowY: "auto", minHeight: 0 }}>
               {loading && <div>Loading…</div>}
               {!loading &&
-                (post?.comments || []).map((c) => (
+                (event?.comments || []).map((c) => (
                   <div
                     key={c.id}
                     style={{
@@ -185,7 +189,7 @@ export default function PostDetailPage() {
                     <div style={{ color: "#0f172a" }}>{c.body}</div>
                   </div>
                 ))}
-              {!loading && (post?.comments || []).length === 0 && (
+              {!loading && (event?.comments || []).length === 0 && (
                 <div className="muted">No comments yet.</div>
               )}
             </div>
