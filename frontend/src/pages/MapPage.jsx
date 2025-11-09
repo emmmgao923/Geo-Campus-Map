@@ -7,6 +7,7 @@ const PANEL_RATIO = 0.3333;
 export default function MapPage() {
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
   const [pinnedBuilding, setPinnedBuilding] = useState(null); // NEW
+  const [highlightEventId, setHighlightEventId] = useState(null);
   const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
 
   const activeBuilding = pinnedBuilding ?? hoveredBuilding;     // NEW
@@ -21,7 +22,10 @@ export default function MapPage() {
     //   setHoveredBuilding(e.detail);
     // };
     const onHover = (e) => {
-      if (pinnedBuilding) return;
+      // ignore hover updates while pinned
+      if (pinnedBuilding) return;                 // NEW
+      setHoveredBuilding(e.detail);
+     
   
       const newBuilding = e.detail;
       if (!newBuilding) return;
@@ -56,20 +60,49 @@ export default function MapPage() {
       if (!isHoveringSidebar) {
         currentBuildingId.current = null;
         setHoveredBuilding(null);
+        setHighlightEventId(null); 
       }
     };
 
-    const onPin = (e) => setPinnedBuilding(e.detail); // NEW
+
+    const onPinHover = (e) => {
+    const { buildingId, name, events, eventId } = e.detail;
+    setHoveredBuilding({
+      id: buildingId,
+      name,
+      events,
+    });
+    setHighlightEventId(eventId);
+  };
+
+  const onPinLeave = () => {
+    setHighlightEventId(null);
+    setHoveredBuilding(null);
+  };
+
+    const onPin = (e) => {
+      setPinnedBuilding(e.detail);
+      setHighlightEventId(null);
+     } // NEW
+
+
+     
 
     window.addEventListener("umass:building-hover", onHover);
     window.addEventListener("umass:building-leave", onLeave);
     window.addEventListener("umass:building-pin", onPin);       // NEW
+
+
+    window.addEventListener("umass:pin-hover", onPinHover);
+    window.addEventListener("umass:pin-leave", onPinLeave);
 
     return () => {
       window.removeEventListener("umass:building-hover", onHover);
       window.removeEventListener("umass:building-leave", onLeave);
       window.removeEventListener("umass:building-pin", onPin);  // NEW
 
+    window.removeEventListener("umass:pin-hover", onPinHover);
+    window.removeEventListener("umass:pin-leave", onPinLeave);
     };
   }, [pinnedBuilding, hoveredBuilding, isHoveringSidebar]); // NEW: 依赖 pinnedBuilding，这样 pinned 时会暂停 hover/leave 的影响
 
@@ -128,6 +161,7 @@ export default function MapPage() {
               <Sidebar
                 building={activeBuilding}
                 pinned={Boolean(pinnedBuilding)}
+                highlightEventId={highlightEventId}
                 onUnpin={() => {
                   setPinnedBuilding(null);
                   setHoveredBuilding(null);

@@ -3,6 +3,8 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "../App.css";
 import * as turf from "@turf/turf";
+import { motion } from "framer-motion";
+import { createRoot } from "react-dom/client";
 
 const campusBounds = [
   [-72.52811100006191, 42.38660446181402],
@@ -152,52 +154,80 @@ function MapView() {
             }
           })
         );
+        
+      const emojiPinFeatures = [];
 
-        const eventPinFeatures = [];
-        buildingsData.features.forEach((ft) => {
-          const bId = ft?.properties?.id;
-          const bName = ft?.properties?.name;
-          if (!bId) return;
+      buildingsData.features.forEach((feature) => {
+        const bId = feature?.properties?.id;
+        const bName = feature?.properties?.name;
+        if (!bId) return;
 
-          const events = buildingEvents[bId];
-          if (!events || !events.length) return;
+        const events = buildingEvents[bId];
+        if (!events || !events.length) return;
 
-          events.forEach((evt, index) => {
-            const iconId = CATEGORY_ICON[evt.type] || "pin-study";
-            const p = randomPointInPolygon(ft.geometry);
-            if (!p) return;
-            eventPinFeatures.push({
-              type: "Feature",
-              geometry: p.geometry,
-              properties: {
-                iconId,
-                buildingId: bId,
-                buildingName: bName,
-                type: evt.type,
-                category: evt.category,
-                idx: index,
-              },
-            });
+        events.forEach((evt, index) => {
+          const iconId = CATEGORY_ICON[evt.type] || "pin-study";
+
+          const p = randomPointInPolygon(feature.geometry);
+          if (!p) return;
+
+          emojiPinFeatures.push({
+            type: "Feature",
+            geometry: p.geometry,
+            properties: {
+              iconId,
+              buildingId: bId,
+              buildingName: bName,
+              category: evt.category,
+              idx: index,
+              eventId: evt._id || evt.id,
+            },
           });
         });
+      });
 
-        const markers = [];
-        eventPinFeatures.forEach((f) => {
-          const outer = document.createElement("div");
-          const pin = document.createElement("div");
-          pin.className = "floating-pin floating-pin--float";
-          pin.style.backgroundImage = `url(/pins/${f.properties.iconId}.png)`;
-          pin.style.backgroundSize = "contain";
-          pin.style.backgroundRepeat = "no-repeat";
-          pin.style.width = "66px";
-          pin.style.height = "66px";
-          outer.appendChild(pin);
 
-          const marker = new mapboxgl.Marker({ element: outer, anchor: "bottom" })
+      const markers = [];
+
+
+       emojiPinFeatures.forEach((f) => {
+        // 外层：给 Mapbox 用来定位，不能加 transform 动画
+        const el = document.createElement("div");
+        const pin = document.createElement("div");
+        pin.className = "floating-pin floating-pin--float";
+        pin.style.backgroundImage = `url(/pins/${f.properties.iconId}.png)`;
+        pin.style.backgroundSize = "contain";
+        pin.style.backgroundRepeat = "no-repeat";
+        pin.style.width = "66px";
+        pin.style.height = "66px";
+
+        el.appendChild(pin);
+
+        const marker = new mapboxgl.Marker({ element: outer, anchor: "bottom" })
             .setLngLat(f.geometry.coordinates)
             .addTo(map);
 
-          markers.push(marker);
+        const payload = {
+            buildingId: f.properties.buildingId,
+            name: f.properties.buildingName,
+            eventId: f.properties.eventId,
+            // 把整栋楼的 events 也顺便塞过去，省得 MapPage 再查
+            events: buildingEvents[f.properties.buildingId] || [],
+        };
+
+        el.addEventListener("mouseenter", () => {
+            window.dispatchEvent(
+            new CustomEvent("umass:pin-hover", { detail: payload })
+            );
+        });
+
+        el.addEventListener("mouseleave", () => {
+            window.dispatchEvent(
+            new CustomEvent("umass:pin-leave", { detail: payload })
+            );
+        });
+
+        markers.push(marker);
         });
         markersRef.current = markers;
 
@@ -248,11 +278,12 @@ function MapView() {
           );
         });
 
-        map.on("mousemove", "campus-buildings-hit", (e) => {
-          if (!e.features?.length) return;
-          const f = e.features[0];
-          const buildingId = f.properties.id;
-          const name = f.properties.name;
+     // NEW: click a building to pin the sidebar
+        map.on("click", "campus-buildings-hit", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const buildingId = f.properties.id;
+        const name = f.properties.name;
 
           if (hoveredId === buildingId) return;
           hoveredId = buildingId;

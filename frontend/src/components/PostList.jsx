@@ -35,6 +35,7 @@ const TYPE_FG = {
 export default function PostList({
   buildingId,
   events =  [],
+  highlightEventId,
   autoScroll = true,
   expanded = false,     // switch to expanded card layout
   filterType = null,    // filter by type key 
@@ -44,6 +45,7 @@ export default function PostList({
   const wrapRef = useRef(null);
   const timerRef = useRef(null);
   const navigate = useNavigate();
+  const [hoveredId, setHoveredId] = useState(null);
 
   const filtered = useMemo(() => {
     if (!Array.isArray(events)) return [];
@@ -124,6 +126,8 @@ export default function PostList({
         const author = ev.author ?? "Anon";
         const created = ev.created_at ? new Date(ev.created_at) : null;
 
+        const isHighlighted = (highlightEventId && key === highlightEventId) || key === hoveredId; // ✅
+
         const goDetail = () => navigate(`/post/${encodeURIComponent(key)}`);
 
         return (
@@ -135,6 +139,8 @@ export default function PostList({
               onKeyDown={(e) => {
                 if (e.key === "Enter") goDetail();
               }}
+              onMouseEnter={() => setHoveredId(key)}   // 本地 hover 高亮
+              onMouseLeave={() => setHoveredId(null)}
               // === Entrance animation for each post ===
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -151,7 +157,11 @@ export default function PostList({
                 borderRadius: 14,
                 padding: 12,
                 marginBottom: 12,
-                background: "#fff",
+                background: isHighlighted
+                ? "#f5f5f5ff"                   
+                : "#ffffff",
+                transform: isHighlighted ? "scale(1.02)" : "none",
+                transition: "all 0.18s ease-out",
                 cursor: "pointer",
                 boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
                 originY: 0.5,
