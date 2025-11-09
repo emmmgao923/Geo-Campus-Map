@@ -58,7 +58,7 @@ export default function SidebarDetail({ building }) {
   };
 
   // Header text: zone name
-  const headerText = `Your Current in: ${name} `;
+  const headerText = `Current loc: ${name} `;
 
   return (
     <aside
