@@ -1,8 +1,10 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import SearchBar from './SearchBar.jsx'
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Header() {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate()
   const location = useLocation()
   const isPostPage = location.pathname.startsWith('/post/')
@@ -54,7 +56,7 @@ export default function Header() {
           onClick={() => navigate('/profile')}
           title="Profile"
         >
-          <span>U</span>
+          <span>{user?.avatarLetter??"U"}</span>
         </button>
       </div>
     </header>

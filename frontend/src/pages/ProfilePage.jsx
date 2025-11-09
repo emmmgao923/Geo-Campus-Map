@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import firstPostImg from "../assets/1.png";
+import { useAuth } from "../context/AuthContext.jsx";
 
 /* ========= Glory Path: Rank & Levels ========= */
 // Rank names (low → high)
@@ -293,9 +295,45 @@ function pointsForPost(p) {
 
 /* ========= Main Page ========= */
 export default function ProfilePage() {
+  const { user, signOut } = useAuth(); // ✅ 从 context 获取登录状态
+
+  const nav = useNavigate();
+
   const totalPoints = 420;
   const title = useMemo(() => rankOf(totalPoints), [totalPoints]);
   const [active, setActive] = useState("title");
+
+  // ✅ 未登录状态显示
+  if (!user) {
+    return (
+      <main
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          flexDirection: "column",
+          background: "#fafafa",
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            padding: "2rem 3rem",
+            textAlign: "center",
+          }}
+        >
+          <h2 style={{ fontSize: "1.5rem", fontWeight: 800 }}>You're not logged in</h2>
+          <p style={{ color: "#6b7280", marginTop: 8 }}>
+            Please <Link to="/signin" style={{ color: "#2563eb", textDecoration: "underline" }}>sign in</Link> to view your profile.
+          </p>
+        </div>
+      </main>
+    );
+  }
+  console.log(user.username);
 
   // >>> Expanded posts (10 items)
   const myPosts = [
@@ -413,12 +451,17 @@ export default function ProfilePage() {
                   fontSize: 20,
                 }}
               >
-                U
+                {user.avatarLetter}
               </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: "1.3rem", marginBottom: 4 }}>Username</div>
-                <div style={{ color: "#6b7280", fontSize: "0.95rem" }}>user@example.com</div>
+                <div style={{ fontWeight: 800, fontSize: "1.3rem", marginBottom: 4 }}>{user.username}</div>
+                <div style={{ color: "#6b7280", fontSize: "0.95rem" }}>{user.email}</div>
               </div>
+
+              <button className="btn-lite" onClick={() => { signOut(); nav('/'); }}>
+                Sign out
+              </button>
+
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
               <span

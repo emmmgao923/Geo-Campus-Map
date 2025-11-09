@@ -8,4 +8,5 @@ class Comment(BaseModel):
     event_id: str
     user_id: Optional[str] = None
     content: str
+    likes_count: int = 0                            # Number of likes
     timestamp: datetime = datetime.utcnow()

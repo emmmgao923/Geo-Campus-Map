@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from app.database import db
 from app.models.comment_model import Comment
 from typing import List
+from datetime import datetime
+from bson import ObjectId
 
 router = APIRouter(prefix="/api/comments", tags=["Comments"])
 
@@ -25,3 +27,11 @@ async def get_comments_by_event(event_id: int):
     for c in comments:
         c["_id"] = str(c["_id"])
     return comments
+
+@router.delete("/{comment_id}")
+async def delete_comment_by_id(comment_id: str):
+    """Delete a specific comment by its MongoDB _id."""
+    result = await db["comments"].delete_one({"_id": comment_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return {"message": "Comment deleted successfully", "deleted_id": comment_id}

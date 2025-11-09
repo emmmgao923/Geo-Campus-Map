@@ -74,7 +74,7 @@ function MapView() {
             container: mapContainerRef.current,
             style: "mapbox://styles/sammie2002/cmhogkb5a001b01r0fwbo7qkr",
             center,           // 用户定位中心
-            zoom: defaultZoom,
+            zoom: 16,
         });
     
         mapRef.current = map;
