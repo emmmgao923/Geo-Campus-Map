@@ -7,6 +7,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import AchievementPopup from "./components/AchievementPopup.jsx";
 import SignInPage from "./pages/SignInPage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
+import PostDetailPage from "./pages/PostDetailPage.jsx";   // ✅ 新增
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import axios from "axios";
 
@@ -44,6 +45,8 @@ function AppContent() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        {/* ✅ 新增下面这一行，匹配帖子详情页 */}
+        <Route path="/post/:buildingId" element={<PostDetailPage />} />
       </Routes>
       <AchievementPopup achievement={achievement} />
     </>
