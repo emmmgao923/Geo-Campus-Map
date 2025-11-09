@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence  } from "framer-motion";
 
 
 const TYPE_LABEL = {
@@ -115,7 +115,8 @@ export default function PostList({
       </div>
        )}
     
-      {filtered.map((ev) => {
+    <AnimatePresence mode="popLayout">
+      {filtered.map((ev, index) => {
         const key = ev._id || ev.id;
         const type = String(ev.type || "other").toLowerCase();
         const likes = ev.likes_count != null ? ev.likes_count : 0;
@@ -126,23 +127,37 @@ export default function PostList({
         const goDetail = () => navigate(`/post/${encodeURIComponent(key)}`);
 
         return (
-          <div
-            key={key}
-            role="button"
-            tabIndex={0}
-            onClick={goDetail}
-            onKeyDown={(e) => { if (e.key === "Enter") goDetail(); }}
-            style={{
-              border: "1px solid #eef2f7",
-              borderRadius: 14,
-              padding: 12,
-              marginBottom: 12,
-              background: "#fff",
-              cursor: "pointer",
-              boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
-            }}
-            title={ev.title}
-          >
+<motion.div
+              key={key}
+              role="button"
+              tabIndex={0}
+              onClick={goDetail}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") goDetail();
+              }}
+              // === Entrance animation for each post ===
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{
+                duration: 0.35,
+                ease: "easeOut",
+                delay: index * 0.05, // stagger delay by index
+              }}
+              whileHover={{ scale: 1.02 }} // slightly enlarge on hover
+              whileTap={{ scale: 0.98 }}   // slightly shrink on click
+              style={{
+                border: "1px solid #eef2f7",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 12,
+                background: "#fff",
+                cursor: "pointer",
+                boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
+                originY: 0.5,
+              }}
+              title={ev.title}
+            >
             {/* First line: [badge] Title .......... ❤️ likes */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span
@@ -223,9 +238,10 @@ export default function PostList({
                 {created && <span>· {created.toLocaleString()}</span>}
               </div>
             )}
-          </div>
+          </motion.div>
         );
       })}
+      </AnimatePresence>
     </div>
   );
 }
