@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PostList from "./PostList";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 /**
  * SidebarDetail (for PostDetailPage)
@@ -8,18 +10,11 @@ import PostList from "./PostList";
  * - Scrollable post list (expanded cards)
  * - Sticky bottom "Create a Post" that never covers the list
  */
-export default function SidebarDetail({ building }) {
-  if (!building) return null;
-
-  const name =
-    building?.properties?.name ?? building?.name ?? "Building";
-  const buildingId =
-    building?.id ??
-    building?._id ??
-    building?.properties?.id ??
-    building?.properties?._id;
-
+export default function SidebarDetail({ eventList = [], buildingName = "Building", buildingId = null }) {
   const [filter, setFilter] = useState(null);
+  const events = eventList;
+
+  // const [filter, setFilter] = useState(null);
 
   const CATS = [
     { key: "notice",    label: "Notice",    emoji: "📢" },
@@ -57,9 +52,9 @@ export default function SidebarDetail({ building }) {
           whiteSpace: "nowrap",
           textOverflow: "ellipsis",
         }}
-        title={name}
+        title={buildingName}
       >
-        {name}
+        {buildingName}
       </h2>
 
       {/* One-line emoji row */}
@@ -104,6 +99,7 @@ export default function SidebarDetail({ building }) {
       <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
         <PostList
           buildingId={buildingId}
+          events={events}
           autoScroll={false}
           expanded={true}
           filterType={filter}
