@@ -4,7 +4,7 @@ import Header from './components/Header.jsx'
 import MapPage from './pages/MapPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import PostDetailPage from './pages/PostDetailPage.jsx' 
-// import AchievementPopup from "./components/AchievementPopup.jsx";
+import AchievementPopup from "./components/AchievementPopup.jsx";
 
 export default function App() {
   const [achievement, setAchievement] = useState(null);
@@ -42,7 +42,7 @@ export default function App() {
         <Route path="/post/:buildingId" element={<PostDetailPage />} /> {/* NEW */}
       </Routes>
 
-      {/* <AchievementPopup achievement={achievement} /> */}
+      <AchievementPopup achievement={achievement} />
     </div>
   )
 }
