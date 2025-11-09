@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence  } from "framer-motion";
 
 
 const TYPE_LABEL = {
@@ -117,7 +117,8 @@ export default function PostList({
       </div>
        )}
     
-      {filtered.map((ev) => {
+    <AnimatePresence mode="popLayout">
+      {filtered.map((ev, index) => {
         const key = ev._id || ev.id;
         const type = String(ev.type || "other").toLowerCase();
         const likes = ev.likes_count != null ? ev.likes_count : 0;
@@ -130,32 +131,43 @@ export default function PostList({
         const goDetail = () => navigate(`/post/${encodeURIComponent(key)}`);
 
         return (
-          <div
-            key={key}
-            role="button"
-            tabIndex={0}
-            onClick={goDetail}
-            onKeyDown={(e) => { if (e.key === "Enter") goDetail(); }}
-            onMouseEnter={() => setHoveredId(key)}   // 本地 hover 高亮
-            onMouseLeave={() => setHoveredId(null)}
-            style={{
-              border: "1px solid #eef0f7ff",
-              // boxShadow: isHighlighted
-              //   ? "0 6px 18px rgba(37,99,235,0.24)"
-              //   : "0 1px 0 rgba(2,6,23,0.04)",
-              background: isHighlighted
-              ? "#f5f5f5ff"                   
-              : "#ffffff",
-              transform: isHighlighted ? "scale(1.02)" : "none",
-              transition: "all 0.18s ease-out",
-              borderRadius: 14,
-              padding: 12,
-              marginBottom: 12,
-              cursor: "pointer",
-              boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
-            }}
-            title={ev.title}
-          >
+<motion.div
+              key={key}
+              role="button"
+              tabIndex={0}
+              onClick={goDetail}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") goDetail();
+              }}
+              onMouseEnter={() => setHoveredId(key)}   // 本地 hover 高亮
+              onMouseLeave={() => setHoveredId(null)}
+              // === Entrance animation for each post ===
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{
+                duration: 0.35,
+                ease: "easeOut",
+                delay: index * 0.05, // stagger delay by index
+              }}
+              whileHover={{ scale: 1.02 }} // slightly enlarge on hover
+              whileTap={{ scale: 0.98 }}   // slightly shrink on click
+              style={{
+                border: "1px solid #eef2f7",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 12,
+                background: isHighlighted
+                ? "#f5f5f5ff"                   
+                : "#ffffff",
+                transform: isHighlighted ? "scale(1.02)" : "none",
+                transition: "all 0.18s ease-out",
+                cursor: "pointer",
+                boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
+                originY: 0.5,
+              }}
+              title={ev.title}
+            >
             {/* First line: [badge] Title .......... ❤️ likes */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span
@@ -236,9 +248,10 @@ export default function PostList({
                 {created && <span>· {created.toLocaleString()}</span>}
               </div>
             )}
-          </div>
+          </motion.div>
         );
       })}
+      </AnimatePresence>
     </div>
   );
 }
