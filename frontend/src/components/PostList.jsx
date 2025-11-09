@@ -1,3 +1,6 @@
+// PostList.jsx
+// Unchanged except for code style comments. Fixed-height cards for consistent frames.
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -35,7 +38,6 @@ const TYPE_FG = {
 function formatAbsolute(ts) {
   return new Date(ts || Date.now()).toLocaleString();
 }
-// Show relative time for < 7 days; otherwise absolute
 function formatRelativeOrAbsolute(ts) {
   const now = Date.now();
   const t = typeof ts === "number" ? ts : (ts ? new Date(ts).getTime() : now);
@@ -70,24 +72,25 @@ function demoEvents(buildingId) {
 
 export default function PostList({
   buildingId,
-  autoScroll = false,     // not used in detail sidebar
-  expanded = true,        // show summary + meta
-  filterType = null,      // category filter
-  bottomPadding = 0,      // reserved space for sticky footer
-  cardHeight,             // if omitted we compute from row metrics below
+  autoScroll = false,
+  expanded = true,
+  filterType = null,
+  bottomPadding = 0,
+  cardHeight,
 }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef(null);
   const navigate = useNavigate();
 
-  // --- Row metrics: 3 rows exactly (title, summary, meta) ---
+  // --- Row metrics: exactly 3 rows (title, summary, meta) ---
   const PAD = 12;
   const GAP = 6;
   const ROW_TITLE = 24;
   const ROW_SUMMARY = 20;
   const ROW_META = 18;
-  const GRID_HEIGHT = ROW_TITLE + (expanded ? ROW_SUMMARY + ROW_META + 2 * GAP : 0);
+  const GRID_HEIGHT =
+    ROW_TITLE + (expanded ? ROW_SUMMARY + ROW_META + 2 * GAP : 0);
   const CARD_FIXED = PAD * 2 + GRID_HEIGHT;
   const CARD_HEIGHT = typeof cardHeight === "number" ? cardHeight : CARD_FIXED;
 
@@ -100,7 +103,9 @@ export default function PostList({
     (async () => {
       setLoading(true);
       try {
-        const r = await fetch(`/api/events?building_id=${encodeURIComponent(buildingId)}`);
+        const r = await fetch(
+          `/api/events?building_id=${encodeURIComponent(buildingId)}`
+        );
         if (!r.ok) throw new Error("bad status");
         const data = await r.json();
         if (!aborted) setEvents(Array.isArray(data) ? data : []);
@@ -110,13 +115,16 @@ export default function PostList({
         if (!aborted) setLoading(false);
       }
     })();
-    return () => { aborted = true; };
+    return () => {
+      aborted = true;
+    };
   }, [buildingId]);
 
   const filtered = useMemo(() => {
     if (!filterType) return events;
     return events.filter(
-      (e) => String(e.type).toLowerCase() === String(filterType).toLowerCase()
+      (e) =>
+        String(e.type).toLowerCase() === String(filterType).toLowerCase()
     );
   }, [events, filterType]);
 
@@ -134,7 +142,9 @@ export default function PostList({
     >
       {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading…</div>}
       {!loading && filtered.length === 0 && (
-        <div style={{ padding: 8, color: "#6b7280" }}>No posts found.</div>
+        <div style={{ padding: 8, color: "#6b7280" }}>
+            No posts here yet, be the first to share!
+        </div>
       )}
 
       {filtered.map((ev) => {
@@ -142,6 +152,7 @@ export default function PostList({
         const type = String(ev.type || "other").toLowerCase();
         const likes = ev.likes_count ?? 0;
         const summary = ev.summary ?? "";
+        the_author: ;
         const author = ev.author ?? "Anon";
         const created = ev.created_at ? new Date(ev.created_at) : null;
 
@@ -152,7 +163,7 @@ export default function PostList({
             key={key}
             onClick={goDetail}
             style={{
-              // --- fixed outer frame ---
+              // Fixed outer frame
               position: "relative",
               height: CARD_HEIGHT,
               minHeight: CARD_HEIGHT,
@@ -198,7 +209,15 @@ export default function PostList({
               }}
             >
               {/* Row 1: badge + title */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: ROW_TITLE, paddingRight: 36 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  minHeight: ROW_TITLE,
+                  paddingRight: 36,
+                }}
+              >
                 <span
                   style={{
                     fontSize: 12,
@@ -246,7 +265,7 @@ export default function PostList({
                 </div>
               )}
 
-              {/* Row 3: meta with relative/absolute time */}
+              {/* Row 3: meta */}
               {expanded && (
                 <div
                   style={{

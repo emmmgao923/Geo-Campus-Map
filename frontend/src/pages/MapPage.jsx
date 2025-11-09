@@ -6,44 +6,44 @@ const PANEL_RATIO = 0.3333;
 
 export default function MapPage() {
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
-  const [pinnedBuilding, setPinnedBuilding] = useState(null); // NEW
+  const [pinnedBuilding, setPinnedBuilding] = useState(null);
 
-  const activeBuilding = pinnedBuilding ?? hoveredBuilding;     // NEW
+  const activeBuilding = pinnedBuilding ?? hoveredBuilding; 
   const showSidebar = Boolean(activeBuilding);
 
   useEffect(() => {
     const onHover = (e) => {
       // ignore hover updates while pinned
-      if (pinnedBuilding) return;                 // NEW
+      if (pinnedBuilding) return; 
       setHoveredBuilding(e.detail);
     };
 
     const onLeave = () => {
-      if (pinnedBuilding) return;                 // NEW
+      if (pinnedBuilding) return; 
       setHoveredBuilding(null);
     };
 
-    const onPin = (e) => setPinnedBuilding(e.detail); // NEW
+    const onPin = (e) => setPinnedBuilding(e.detail);
 
     window.addEventListener("umass:building-hover", onHover);
     window.addEventListener("umass:building-leave", onLeave);
-    window.addEventListener("umass:building-pin", onPin);       // NEW
+    window.addEventListener("umass:building-pin", onPin); 
 
     return () => {
       window.removeEventListener("umass:building-hover", onHover);
       window.removeEventListener("umass:building-leave", onLeave);
-      window.removeEventListener("umass:building-pin", onPin);  // NEW
+      window.removeEventListener("umass:building-pin", onPin); 
     };
-  }, [pinnedBuilding]); // NEW: 依赖 pinnedBuilding，这样 pinned 时会暂停 hover/leave 的影响
+  }, [pinnedBuilding]); // depend on pinnedBuilding
 
-  // 可选：按 ESC 解除固定
+  // escape to cancel 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") setPinnedBuilding(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []); // 可删
+  }, []); 
 
   return (
     <div
@@ -88,8 +88,8 @@ export default function MapPage() {
           >
             <Sidebar
               building={activeBuilding}
-              pinned={Boolean(pinnedBuilding)}                 // NEW
-              onUnpin={() => setPinnedBuilding(null)}          // NEW
+              pinned={Boolean(pinnedBuilding)}  
+              onUnpin={() => setPinnedBuilding(null)} 
             />
           </div>
         )}
