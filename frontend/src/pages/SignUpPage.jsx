@@ -58,19 +58,23 @@ export default function SignUpPage() {
 
       // 邮箱验证成功后，将用户信息写入 MongoDB 用户表
       await axios.post("http://127.0.0.1:8000/api/users", {
-        email,
-        username,
-        credits: 0,
-        post_count: 0,
-        achievements: {
-          "first_post": False,
-          "ten_posts": False,
-          "first_like": False,
-          "hundred_like": False,
-          "first_help": False,
-          "ten_help": False,
-        },
-      });
+        username: str,
+        email: EmailStr,
+        password_hash: str,
+        created_at: datetime = datetime.utcnow(),
+        level: int = 1,
+        credits: int = 0,
+        post_count: int = 0,
+        like_received: int = 0,       
+        help_count: int = 0,
+        achievements: Dict[str, bool] = {  
+            "first_post": False,           
+            "ten_posts": False,            
+            "first_like": False,            
+            "hundred_like": False,
+            "first_help": False,
+            "ten_help": False,
+        }});
 
       alert("✅ Registration complete!");
       nav(next, { replace: true });
