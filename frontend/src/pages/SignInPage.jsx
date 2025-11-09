@@ -10,7 +10,7 @@ export default function SignInPage() {
   const params = new URLSearchParams(search);
   const next = params.get("next") || "/";
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function SignInPage() {
     setErr("");
     setLoading(true);
     try {
-      await signIn({ username, password: pwd });
+      await signIn({ email, password: pwd });
       nav(next, { replace: true });
     } catch (e) {
       setErr(e?.message || "Login failed");
@@ -42,11 +42,11 @@ export default function SignInPage() {
             )}
             <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
               <label>
-                <div className="muted" style={{ marginBottom: 6 }}>Username</div>
+                <div className="muted" style={{ marginBottom: 6 }}>Email(@umass.edu)</div>
                 <input
                   className="composer-input"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
                 />
