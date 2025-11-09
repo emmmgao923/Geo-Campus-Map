@@ -1,9 +1,14 @@
+// src/components/Header.jsx
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import SearchBar from './SearchBar.jsx'
 
 export default function Header() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // Use a different placeholder on post detail pages
+  const isPostPage = location.pathname.startsWith('/post/')
+  const placeholder = isPostPage ? 'Search post...' : 'Search buildings...'
 
   return (
     <header className="topbar">
@@ -13,9 +18,9 @@ export default function Header() {
           <span className="logo-mark">GeoCampus</span>
         </div>
 
-        {/* Middle: Search */}
+        {/* Middle: Search (positioned by CSS .search-container) */}
         <div className="topbar-middle search-container">
-          <SearchBar />
+          <SearchBar placeholder={placeholder} />
         </div>
 
         {/* Right: Avatar */}

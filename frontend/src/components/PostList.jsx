@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+
 
 const TYPE_LABEL = {
   help: "Help",
@@ -29,71 +32,32 @@ const TYPE_FG = {
   other: "#111827",
 };
 
-// === Demo data ===
-function demoEvents(buildingId) {
-  const bid = String(buildingId || "unknown");
-  return [
-    { _id: "demo1", building_id: bid, title: "Looking for study group", type: "study", likes_count: 3 },
-    { _id: "demo2", building_id: bid, title: "Free pizza", type: "food", likes_count: 12 },
-    { _id: "demo3", building_id: bid, title: "Lost water bottle", type: "help", likes_count: 0 },
-    { _id: "demo4", building_id: bid, title: "Math tutoring drop-in", type: "study", likes_count: 5 },
-    { _id: "demo5", building_id: bid, title: "Club fair booth setup", type: "activity", likes_count: 2 },
-    { _id: "demo6", building_id: bid, title: "Found AirPods case", type: "notice", likes_count: 1 },
-    { _id: "demo7", building_id: bid, title: "Snack stash restocked", type: "food", likes_count: 7 },
-    { _id: "demo8", building_id: bid, title: "Coding challenge night", type: "activity", likes_count: 9 },
-    { _id: "demo9", building_id: bid, title: "Quiet zone reminder", type: "notice", likes_count: 4 },
-  ];
-}
+export default function PostList({
+  buildingId,
+  events =  [],
+  autoScroll = true,
+  expanded = false,     // switch to expanded card layout
+  filterType = null,    // filter by type key 
+  bottomPadding = 0,
+}) {
 
-export default function PostList({ buildingId, autoScroll = true }) {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
   const wrapRef = useRef(null);
   const timerRef = useRef(null);
+  const navigate = useNavigate();
 
-  // === Fetch events or fallback demo ===
-  useEffect(() => {
-    if (!buildingId) {
-      setEvents([]);
-      return;
-    }
-    let aborted = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/events?building_id=${encodeURIComponent(buildingId)}`);
-        if (!res.ok) throw new Error("bad status");
-        const data = await res.json();
-        if (!aborted) setEvents(Array.isArray(data) ? data : []);
-      } catch {
-        if (!aborted) setEvents(demoEvents(buildingId));
-      } finally {
-        if (!aborted) setLoading(false);
-      }
-    })();
-    return () => {
-      aborted = true;
-    };
-  }, [buildingId]);
+  const filtered = useMemo(() => {
+    if (!Array.isArray(events)) return [];
+    if (!filterType) return events;
+    const ft = String(filterType).toLowerCase();
+    return events.filter(
+      (e) => String(e.type || "").toLowerCase() === ft
+    );
+  }, [events, filterType]);
 
-  // === Auto scroll until bottom then stop ===
   useEffect(() => {
     if (!autoScroll) return;
     const el = wrapRef.current;
     if (!el) return;
-
-    function start() {
-      stop();
-      timerRef.current = setInterval(() => {
-        if (!el) return;
-        const atBottom = el.scrollTop + el.clientHeight + 2 >= el.scrollHeight;
-        if (atBottom) {
-          stop(); // stop permanently when reach bottom
-        } else {
-          el.scrollTop = el.scrollTop + 1;
-        }
-      }, 18);
-    }
 
     function stop() {
       if (timerRef.current) {
@@ -102,55 +66,89 @@ export default function PostList({ buildingId, autoScroll = true }) {
       }
     }
 
+    function start() {
+      stop();
+      if (!filtered.length) return;
+      timerRef.current = setInterval(() => {
+        const atBottom =
+          el.scrollTop + el.clientHeight + 2 >= el.scrollHeight;
+        if (atBottom) {
+          stop();
+        } else {
+          el.scrollTop = el.scrollTop + 1;
+        }
+      }, 18);
+    }
+
+
     start();
-    el.addEventListener("mouseenter", stop);
-    el.addEventListener("mouseleave", () => {
+    const handleEnter = () => stop();
+    const handleLeave = () => {
       if (!timerRef.current) start();
-    });
+    };
+
+    el.addEventListener("mouseenter", handleEnter);
+    el.addEventListener("mouseleave", handleLeave);
 
     return () => {
       stop();
-      el.removeEventListener("mouseenter", stop);
-      el.removeEventListener("mouseleave", start);
+      el.removeEventListener("mouseenter", handleEnter);
+      el.removeEventListener("mouseleave", handleLeave);
     };
-  }, [events, autoScroll, buildingId]);
+  }, [filtered, autoScroll]);
 
-  // === Render ===
+
+  // Render
   return (
-    <div ref={wrapRef} style={{ flex: 1, overflowY: "auto", paddingTop: 8 }}>
-      {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading events…</div>}
-      {!loading && events.length === 0 && (
-        <div style={{ padding: 8, color: "#6b7280" }}>No events.</div>
-      )}
-
-      {events.map((ev) => {
+    <div 
+    ref={wrapRef} 
+    style={{ flex: 1,
+    overflowY: "auto", 
+    paddingTop: 8,
+    paddingBottom: bottomPadding,
+    }}
+    >
+      
+      {buildingId && filtered.length === 0 && (
+      <div style={{ padding: 8, color: "#6b7280" }}>
+        Nothing happening here...
+      </div>
+       )}
+    
+      {filtered.map((ev) => {
         const key = ev._id || ev.id;
         const type = String(ev.type || "other").toLowerCase();
         const likes = ev.likes_count != null ? ev.likes_count : 0;
+        const summary = ev.summary ?? "";
+        const author = ev.author ?? "Anon";
+        const created = ev.created_at ? new Date(ev.created_at) : null;
+
+        const goDetail = () => navigate(`/post/${encodeURIComponent(key)}`);
 
         return (
           <div
             key={key}
+            role="button"
+            tabIndex={0}
+            onClick={goDetail}
+            onKeyDown={(e) => { if (e.key === "Enter") goDetail(); }}
             style={{
-              border: "1px solid #eee",
-              borderRadius: 12,
+              border: "1px solid #eef2f7",
+              borderRadius: 14,
               padding: 12,
-              marginBottom: 10,
+              marginBottom: 12,
               background: "#fff",
+              cursor: "pointer",
+              boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
             }}
+            title={ev.title}
           >
-            {/* Only: [badge] Title .......... ❤️ likes */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
+            {/* First line: [badge] Title .......... ❤️ likes */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span
                 style={{
                   fontSize: 12,
-                  padding: "2px 8px",
+                  padding: "6px 10px",
                   borderRadius: 999,
                   background: TYPE_BG[type] || TYPE_BG.other,
                   color: TYPE_FG[type] || TYPE_FG.other,
@@ -163,14 +161,15 @@ export default function PostList({ buildingId, autoScroll = true }) {
 
               <div
                 style={{
-                  fontWeight: 700,
-                  fontSize: 15,
+                  fontWeight: 800,
+                  fontSize: 18,
+                  letterSpacing: 0.2,
                   flex: "1 1 auto",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
+                  color: "#0f172a",
                 }}
-                title={ev.title}
               >
                 {ev.title}
               </div>
@@ -180,16 +179,50 @@ export default function PostList({ buildingId, autoScroll = true }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
-                  fontSize: 13,
+                  fontSize: 14,
                   color: "#ef4444",
                   flex: "0 0 auto",
                 }}
                 title={`${likes} likes`}
               >
                 <span>❤️</span>
-                <span style={{ color: "#6b7280" }}>{likes}</span>
+                <span style={{ color: "#6b7280", fontWeight: 700 }}>{likes}</span>
               </div>
             </div>
+
+            {/* Second line: summary (only when expanded) */}
+            {expanded && summary && (
+              <div
+                style={{
+                  marginTop: 6,
+                  color: "#334155",
+                  fontSize: 14,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={summary}
+              >
+                {summary}
+              </div>
+            )}
+
+            {/* Bottom meta: author · time (only when expanded) */}
+            {expanded && (
+              <div
+                style={{
+                  marginTop: 6,
+                  color: "#64748b",
+                  fontSize: 12,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <span>by {author}</span>
+                {created && <span>· {created.toLocaleString()}</span>}
+              </div>
+            )}
           </div>
         );
       })}
