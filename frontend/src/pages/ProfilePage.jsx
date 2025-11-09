@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import firstPostImg from "../assets/1.png";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -296,10 +296,11 @@ function pointsForPost(p) {
 /* ========= Main Page ========= */
 export default function ProfilePage() {
   const { user, signOut } = useAuth(); // ✅ 从 context 获取登录状态
+  const [credits, setCredits] = useState(0);
 
   const nav = useNavigate();
 
-  const totalPoints = 420;
+  const totalPoints = credits;
   const title = useMemo(() => rankOf(totalPoints), [totalPoints]);
   const [active, setActive] = useState("title");
 
@@ -334,6 +335,19 @@ export default function ProfilePage() {
     );
   }
   console.log(user.username);
+
+  useEffect(() => {
+    if (!user?._id) return;
+  
+    (async () => {
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/users/${user._id}`);
+        setCredits(res.data.credits || 0);
+      } catch (err) {
+        console.error("❌ Failed to fetch user credits:", err);
+      }
+    })();
+  }, [user]);
 
   // >>> Expanded posts (10 items)
   const myPosts = [
