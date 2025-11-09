@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from app.database import db
 from app.models.comment_model import Comment
 from typing import List
+from datetime import datetime
+from bson import ObjectId
 
 router = APIRouter(prefix="/api/comments", tags=["Comments"])
 

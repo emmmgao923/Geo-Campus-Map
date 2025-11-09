@@ -29,7 +29,7 @@ export default function SignUpPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }``
 
   return (
     <main className="page">

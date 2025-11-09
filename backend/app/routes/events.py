@@ -3,6 +3,7 @@ from app.database import db
 from app.models.event_model import Event, EventType
 from typing import List
 from datetime import datetime
+from bson import ObjectId
 
 router = APIRouter(prefix="/api/events", tags=["Events"])
 
@@ -108,3 +109,77 @@ async def get_single_event(event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
     event["_id"] = str(event["_id"])
     return event
+
+
+
+
+@router.post("/{event_id}/resolve")
+async def mark_help_resolved(event_id: str, resolver_id: str):
+    """标记帮助帖子为已解决"""
+    event = await db["events"].find_one({"_id": event_id})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    await db["events"].update_one(
+        {"_id": event_id},
+        {"$set": {"is_resolved": True}}
+    )
+
+    # ✅ 更新帮助者的数据
+    helper = await db["users"].find_one({"_id": resolver_id})
+    if helper:
+        new_help_count = helper.get("help_count", 0) + 1
+        achievements = helper.get("achievements", {})
+        if new_help_count == 1:
+            achievements["first_help"] = True
+        if new_help_count == 10:
+            achievements["ten_help"] = True
+
+        await db["users"].update_one(
+            {"_id": resolver_id},
+            {
+                "$set": {
+                    "help_count": new_help_count,
+                    "achievements": achievements,
+                }
+            },
+        )
+
+    return {"message": "Help marked resolved"}
+
+
+
+@router.post("/{event_id}/like")
+async def like_event(event_id: str):
+    """点赞帖子时，增加帖子作者的 like_received"""
+    event = await db["events"].find_one({"_id": event_id})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # 更新帖子点赞数
+    await db["events"].update_one(
+        {"_id": event_id}, {"$inc": {"likes_count": 1}}
+    )
+
+    # 更新用户被点赞数与成就
+    if event.get("user_id"):
+        user = await db["users"].find_one({"_id": event["user_id"]})
+        if user:
+            new_likes = user.get("like_received", 0) + 1
+            achievements = user.get("achievements", {})
+            if new_likes == 1:
+                achievements["first_like"] = True
+            if new_likes == 100:
+                achievements["hundred_like"] = True
+
+            await db["users"].update_one(
+                {"_id": event["user_id"]},
+                {
+                    "$set": {
+                        "like_received": new_likes,
+                        "achievements": achievements,
+                    }
+                },
+            )
+
+    return {"message": "Like recorded"}
