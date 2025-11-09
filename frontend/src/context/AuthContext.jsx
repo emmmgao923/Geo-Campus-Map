@@ -2,57 +2,82 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
-const AuthContext = createContext(null);
+
+async function registerEmail({ email, password }) {
+  const res = await axios.post("http://127.0.0.1:8000/auth/register", {
+    email,
+    password,
+  });
+  return res.data; // 返回 message: 验证码已发送
+}
+
+async function verifyCode({ email, code }) {
+  const res = await axios.post("http://127.0.0.1:8000/auth/verify", {
+    email,
+    code,
+  });
+  return res.data; // 返回 message: 注册成功
+}
+
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { user_id, username, token }
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // 启动时从 localStorage 读取
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const username = localStorage.getItem("username");
-    const user_id = localStorage.getItem("user_id");
-    if (token && user_id) setUser({ token, username, user_id });
-    setLoading(false);
-  }, []);
-
-  async function signIn({ username_or_email, password }) {
-    const res = await axios.post("http://127.0.0.1:8000/api/auth/login", {
-      username_or_email,
-      password,
-    });
-    const { access_token, user_id, username } = res.data;
-    localStorage.setItem("token", access_token);
-    localStorage.setItem("user_id", user_id);
-    localStorage.setItem("username", username);
-    setUser({ token: access_token, username, user_id });
-  }
-
-  async function signUp({ username, email, password, code }) {
-    await axios.post("http://127.0.0.1:8000/api/auth/register", {
-      username,
+  async function signIn({ email, password }) {
+    const res = await axios.post("http://127.0.0.1:8000/auth/login", {
       email,
       password,
-      code, // 邮箱验证码
     });
-    alert("✅ 注册成功，请登录！");
+
+
+
+    // 构造用户对象
+    const profile = {
+      email: email,
+      username: email.split("@")[0],
+      avatarLetter: email[0].toUpperCase(),
+      token: res.data.access_token,
+    };
+    setUser(profile);
+
+    localStorage.setItem("token", res.data.access_token);
+    localStorage.setItem("user", profile);
   }
 
   function signOut() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("username");
+    localStorage.clear();
     setUser(null);
   }
 
-  const value = useMemo(
-    () => ({ user, loading, signIn, signUp, signOut }),
-    [user, loading]
-  );
+  // ✅ 页面刷新或重新加载时，从 localStorage 恢复用户状态
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+      } catch {
+        localStorage.removeItem("user");
+      }
+    }
+  }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        signIn,
+        signOut,
+        registerEmail, // 第一步
+        verifyCode,    // 第二步
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
+
 
 export function useAuth() {
   const ctx = useContext(AuthContext);

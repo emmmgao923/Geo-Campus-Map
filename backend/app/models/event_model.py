@@ -24,7 +24,7 @@ class Event(BaseModel):
     content: Optional[str] = None                   # Event content/description
     type: EventType                                 # Restricted to Enum values
     is_resolved: bool = False
-    # resolved_by: Optional[str] = None
+    resolved_by: Optional[str] = None
     # tags: Optional[List[str]] = []                  # Optional keyword tags
     # location_point: Optional[dict] = None           # Coordinates inside the building
     timestamp: datetime = datetime.utcnow()         # Creation time (UTC)
