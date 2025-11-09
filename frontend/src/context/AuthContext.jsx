@@ -24,6 +24,16 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
+  async function signUp({ email, password, confirm, username }) {
+    if (password !== confirm) {
+      throw new Error("Passwords do not match");
+    }
+    // 这里可以对接你的验证码注册流程，或只是先存本地状态
+    const newUser = { email, username };
+    setUser(newUser);
+    return newUser;
+  }
+
   async function signIn({ email, password }) {
     const res = await axios.post("http://127.0.0.1:8000/auth/login", {
       email,
@@ -69,6 +79,7 @@ export function AuthProvider({ children }) {
         user,
         signIn,
         signOut,
+        signUp,
         registerEmail, // 第一步
         verifyCode,    // 第二步
       }}

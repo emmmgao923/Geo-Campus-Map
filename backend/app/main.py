@@ -4,6 +4,7 @@ from app.routes.events import router as event_router
 from app.routes.authentication import router as auth_router
 from app.routes.comments import router as comment_router
 from app.routes.achivement import router as achivement_router
+from app.routes.users import router as users_router
 
 
 app = FastAPI(title="Geo Campus API", version="1.0")
@@ -22,6 +23,7 @@ app.include_router(event_router)
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(comment_router)
 app.include_router(achivement_router)
+app.include_router(users_router)
 
 
 @app.get("/")
