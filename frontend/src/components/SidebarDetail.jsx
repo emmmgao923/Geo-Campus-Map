@@ -1,63 +1,128 @@
-import React, { useState, useEffect, useRef } from "react";
+// SidebarDetail.jsx
+// Left sidebar (Mission Zone): fixed width, emoji chips, scrollable mission list,
+// and a sticky "Start New Quest" button that triggers the right-panel editor
+// via a window CustomEvent (no route change).
+
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PostList from "./PostList";
-import { motion, AnimatePresence } from "framer-motion";
 
+export default function SidebarDetail({ building }) {
+  if (!building) return null;
 
-/**
- * SidebarDetail (for PostDetailPage)
- * - Building title
- * - One-line emoji chips (no "Filter" caption)
- * - Scrollable post list (expanded cards)
- * - Sticky bottom "Create a Post" that never covers the list
- */
-export default function SidebarDetail({ eventList = [], buildingName = "Building", buildingId = null }) {
+  const navigate = useNavigate();
+
+  const name = building?.properties?.name ?? building?.name ?? "Building";
+  const buildingId =
+    building?.id ??
+    building?._id ??
+    building?.properties?.id ??
+    building?.properties?._id;
+
   const [filter, setFilter] = useState(null);
-  const events = eventList;
 
-  // const [filter, setFilter] = useState(null);
-
+  // === Gamified category chips ===
   const CATS = [
-    { key: "notice",    label: "Notice",    emoji: "📢" },
-    { key: "help",      label: "Help",      emoji: "🆘" },
-    { key: "event",     label: "Event",     emoji: "📅" },
-    { key: "food",      label: "Food",      emoji: "🍔" },
-    { key: "emergency", label: "Emergency", emoji: "🚨" },
-    { key: "study",     label: "Study",     emoji: "📚" },
-    { key: "activity",  label: "Activity",  emoji: "🎯" },
-    { key: "other",     label: "Others",    emoji: "➕" },
+    { key: "notice",    label: "📢 Announcements", emoji: "📢" },
+    { key: "help",      label: "🆘 Help Requests", emoji: "🆘" },
+    { key: "food",      label: "🍔 Food Drops", emoji: "🍔" },
+    { key: "emergency", label: "🚨 Alerts", emoji: "🚨" },
+    { key: "study",     label: "📚 Study Missions", emoji: "📚" },
+    { key: "activity",  label: "🎯 Campus Events", emoji: "🎯" },
+    { key: "other",     label: "➕ Side Quests", emoji: "➕" },
   ];
 
-  // Height reserved for the sticky footer
-  const FOOTER_SPACE = 88;
+  // Notify SearchBar (page2) which building we're in.
+  useEffect(() => {
+    if (!buildingId) return;
+    window.dispatchEvent(
+      new CustomEvent("app:current-building", {
+        detail: { buildingId, name },
+      })
+    );
+  }, [buildingId, name]);
+
+  // Layout constants
+  const SIDEBAR_WIDTH = 400;
+  const BUTTON_HEIGHT = 44;
+  const BOTTOM_GAP = 12;
+  const FOOTER_SPACE = BUTTON_HEIGHT + BOTTOM_GAP;
+
+  // Trigger editor in the right column without navigation.
+  const openEditor = () => {
+    window.dispatchEvent(
+      new CustomEvent("app:open-editor", {
+        detail: { buildingId, name },
+      })
+    );
+  };
+
+  // Header text: zone name
+  const headerText = `Current loc: ${name} `;
 
   return (
     <aside
       style={{
         height: "100%",
+        width: SIDEBAR_WIDTH,
+        minWidth: SIDEBAR_WIDTH,
+        maxWidth: SIDEBAR_WIDTH,
         display: "flex",
         flexDirection: "column",
         padding: 16,
         background: "#fff",
         boxSizing: "border-box",
-        minHeight: 0, // allow children to create scroll
+        minHeight: 0,
+        position: "relative",
       }}
     >
-      {/* Title */}
-      <h2
+      {/* Header: zone name + exit button */}
+      <div
         style={{
-          margin: "8px 0 6px",
-          fontSize: 18,
-          fontWeight: 700,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          textOverflow: "ellipsis",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 6,
         }}
-        title={buildingName}
       >
-        {buildingName}
-      </h2>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 20,
+            fontWeight: 800,
+            color: "#0f172a",
+            letterSpacing: 0.3,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+          title={headerText}
+          aria-label={headerText}
+        >
+          {headerText}
+        </h2>
 
-      {/* One-line emoji row */}
+        {/* Exit zone button */}
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            border: "1px solid #e2e8f0",
+            background: "#fff",
+            color: "#334155",
+            borderRadius: 8,
+            fontSize: 13,
+            padding: "6px 10px",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#f8fafc")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
+        >
+          Exit
+        </button>
+      </div>
+
+      {/* Category chips (quest types) */}
       <div
         style={{
           display: "flex",
@@ -66,7 +131,7 @@ export default function SidebarDetail({ eventList = [], buildingName = "Building
           overflowY: "hidden",
           whiteSpace: "nowrap",
           paddingBottom: 4,
-          marginBottom: 8,
+          marginBottom: 10,
         }}
       >
         {CATS.map((c) => {
@@ -83,10 +148,11 @@ export default function SidebarDetail({ eventList = [], buildingName = "Building
                 minWidth: 30,
                 borderRadius: 999,
                 border: `1px solid ${active ? "#94a3b8" : "#e5e7eb"}`,
-                background: active ? "#f8fafc" : "#fff",
+                background: active ? "#f0f9ff" : "#fff",
                 display: "grid",
                 placeItems: "center",
                 cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
               <span style={{ fontSize: 16, lineHeight: 1 }}>{c.emoji}</span>
@@ -95,11 +161,10 @@ export default function SidebarDetail({ eventList = [], buildingName = "Building
         })}
       </div>
 
-      {/* Scrollable list area wrapper */}
+      {/* Scrollable quest list */}
       <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
         <PostList
           buildingId={buildingId}
-          events={events}
           autoScroll={false}
           expanded={true}
           filterType={filter}
@@ -107,14 +172,21 @@ export default function SidebarDetail({ eventList = [], buildingName = "Building
         />
       </div>
 
-      {/* Sticky footer button (never covers the list) */}
-      <div style={{ position: "sticky", bottom: 8, paddingTop: 8 }}>
+      {/* Sticky create quest button */}
+      <div style={{ position: "sticky", bottom: BOTTOM_GAP, paddingTop: 8 }}>
         <button
           className="btn-primary"
-          onClick={() => alert("Open post editor (right side)")}
-          style={{ width: "100%", position: "static" }}
+          style={{
+            width: "100%",
+            height: BUTTON_HEIGHT,
+            lineHeight: `${BUTTON_HEIGHT}px`,
+            borderRadius: 10,
+            position: "static",
+            fontWeight: 600,
+          }}
+          onClick={openEditor}
         >
-          Create a Post
+          Start a new post
         </button>
       </div>
     </aside>
