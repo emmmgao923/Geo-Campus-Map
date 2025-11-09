@@ -7,6 +7,8 @@ import React, {
 import { useParams, useLocation } from "react-router-dom";
 import SidebarDetail from "../components/SidebarDetail";
 import axios from "axios"
+import { useAuth } from "../context/AuthContext.jsx";
+
 
 const API_BASE = "http://localhost:8000/api/events"; 
 const API_BASE_COMMENT = "http://localhost:8000/api/comments"; 
@@ -252,7 +254,7 @@ function PostEditor({ building, defaultType = "other", onCancel, onPublish }) {
 export default function PostDetailPage() {
   const { buildingId } = useParams();
   const { search } = useLocation();
-
+  const { user } = useAuth();
   const params = new URLSearchParams(search);
   const eventId = params.get("eventId");
 
@@ -308,30 +310,31 @@ export default function PostDetailPage() {
       setComments([]);
       return;
     }
-
+  
     let aborted = false;
-
+  
     (async () => {
       setCommentsLoading(true);
       try {
-        const r = await axios.get( `http://localhost:8000/api/comments/${encodeURIComponent(eventId)}`);
-        if (!r.ok) throw new Error("bad status");
-        const data = await r.json();
+        const r = await axios.get(`http://localhost:8000/api/comments/${eventId}`);
+  
         if (!aborted) {
-          setComments(Array.isArray(data) ? sdata : []);
+          // Axios 返回结果在 r.data 中
+          setComments(Array.isArray(r.data) ? r.data : []);
         }
       } catch (err) {
-        console.error("Failed to fetch comments", err);
+        console.error("❌ Failed to fetch comments:", err.response?.data || err.message);
         if (!aborted) setComments([]);
       } finally {
         if (!aborted) setCommentsLoading(false);
       }
     })();
-
+  
     return () => {
       aborted = true;
     };
   }, [eventId]);
+  
 
 
 
@@ -362,7 +365,8 @@ export default function PostDetailPage() {
     const temp = {
       _id: `temp-${Date.now()}`,
       event_id: Number(eventId),
-      user_id: "You",                // TODO: 换成真实用户
+      user_id: user?.email || "You",                // TODO: 换成真实用户
+      username: user?.username || "Guest",
       content: text,
       likes_count: 0,
       timestamp: new Date().toISOString(),
@@ -371,15 +375,16 @@ export default function PostDetailPage() {
     setComments((prev) => [...prev, temp]);
     setDraft("");
 
-    // 真正调后端（示例）
-    // await fetch(COMMENTS_API_BASE, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     event_id: Number(eventId),
-    //     content: text,
-    //   }),
-    // });
+    try {
+      await axios.post("http://localhost:8000/api/comments", {
+        event_id: String(eventId),
+        user_id: user?.email || "Guest",
+        content: text,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("❌ Failed to send comment:", err.response?.data || err.message);
+    }
   };
 
   const deleteComment = async (id) => {
@@ -393,7 +398,8 @@ export default function PostDetailPage() {
   };
 
   const deletePost = () => {
-    if (!post || post.author !== "You") return;
+    if (!target || target.user_id !== (user?.email || "You")) return;
+
     if (!window.confirm("Delete this post?")) return;
     setPost((p) =>
       p ? { ...p, title: "[deleted]", summary: "", comments: [] } : p
@@ -859,9 +865,10 @@ export default function PostDetailPage() {
                     }}
                   >
                     <input
-                      placeholder="Write a comment…"
+                      placeholder={user ? "Write a comment…" : "Sign in to comment"}
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
+                      disabled={!user} // ✅ 未登录禁用
                       onCompositionStart={() => (window.__imeComposing = true)}
                       onCompositionEnd={() => (window.__imeComposing = false)}
                       onKeyDown={(e) => {
@@ -883,7 +890,8 @@ export default function PostDetailPage() {
                     <button
                       className="btn-primary"
                       onClick={addComment}
-                      title="Send"
+                      disabled={!user}
+                      title={user ? "Send" : "Sign in to comment"}
                     >
                       Send
                     </button>
