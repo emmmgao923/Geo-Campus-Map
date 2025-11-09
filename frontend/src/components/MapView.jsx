@@ -17,6 +17,7 @@ const CATEGORY_ICON = {
   food: "pin-food",
   emergency: "pin-emergency",
   notice: "pin-announcement",
+  help: "pin-help",
 };
 
 const API_BASE = "http://localhost:8000/api/events";
@@ -114,6 +115,8 @@ function MapView() {
             loadIcon(map, "pin-announcement", "/pins/pin-announcement.png"),
             loadIcon(map, "pin-activity", "/pins/pin-activity.png"),
             loadIcon(map, "pin-emergency", "/pins/pin-emergency.png"),
+            loadIcon(map, "pin-help", "/pins/pin-help.png"),
+            loadIcon(map, "pin-food", "/pins/pin-food.png"),
           ]);
         } catch (e) {
           console.error("Failed to load pin icons", e);

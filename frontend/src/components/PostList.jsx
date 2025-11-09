@@ -17,7 +17,7 @@ const TYPE_BG = {
   notice: "#fef9c3",
   study: "#dcfce7",
   activity: "#e0f2fe",
-  food: "#ffe4e6",
+  food: "#ffe5b1ff",
   emergency: "#fee2e2",
   other: "#f3f4f6",
 };
