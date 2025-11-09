@@ -88,8 +88,8 @@ export default function MapPage() {
           >
             <Sidebar
               building={activeBuilding}
-              pinned={Boolean(pinnedBuilding)}                 // NEW（可选）
-              onUnpin={() => setPinnedBuilding(null)}          // NEW（可选）
+              pinned={Boolean(pinnedBuilding)}                 // NEW
+              onUnpin={() => setPinnedBuilding(null)}          // NEW
             />
           </div>
         )}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const TYPE_LABEL = {
@@ -20,6 +20,7 @@ const TYPE_BG = {
   emergency: "#fee2e2",
   other: "#f3f4f6",
 };
+
 const TYPE_FG = {
   help: "#3730a3",
   notice: "#854d0e",
@@ -30,41 +31,66 @@ const TYPE_FG = {
   other: "#111827",
 };
 
-// Demo data includes summary/author/created_at for expanded cards
+// ---- Time formatting helpers ----
+function formatAbsolute(ts) {
+  return new Date(ts || Date.now()).toLocaleString();
+}
+// Show relative time for < 7 days; otherwise absolute
+function formatRelativeOrAbsolute(ts) {
+  const now = Date.now();
+  const t = typeof ts === "number" ? ts : (ts ? new Date(ts).getTime() : now);
+  const diffMs = Math.max(0, now - t);
+  const sec = Math.floor(diffMs / 1000);
+  const min = Math.floor(sec / 60);
+  const hr  = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+  if (day >= 7) return formatAbsolute(t);
+  if (day >= 1) return `${day} day${day > 1 ? "s" : ""} ago`;
+  if (hr  >= 1) return `${hr} hour${hr > 1 ? "s" : ""} ago`;
+  if (min >= 1) return `${min} minute${min > 1 ? "s" : ""} ago`;
+  return `${sec} second${sec !== 1 ? "s" : ""} ago`;
+}
+
+// --- Demo data (fallback) ---
 function demoEvents(buildingId) {
   const bid = String(buildingId || "unknown");
   const now = Date.now();
   return [
     { _id: "demo1", building_id: bid, title: "Looking for study group", type: "study", likes_count: 3, summary: "CS 187 group forming this weekend.", author: "Alice", created_at: now - 3600e3 },
-    { _id: "demo2", building_id: bid, title: "Free pizza", type: "food", likes_count: 12, summary: "Grab a slice at 5pm in lobby.", author: "Bob", created_at: now - 2*3600e3 },
-    { _id: "demo3", building_id: bid, title: "Lost water bottle", type: "help", likes_count: 0, summary: "Blue Nalgene with stickers.", author: "Cathy", created_at: now - 3*3600e3 },
-    { _id: "demo4", building_id: bid, title: "Math tutoring drop-in", type: "study", likes_count: 5, summary: "Calc 2 help Tue/Thu evening.", author: "Dan", created_at: now - 4*3600e3 },
-    { _id: "demo5", building_id: bid, title: "Club fair booth setup", type: "activity", likes_count: 2, summary: "Volunteers needed tomorrow.", author: "Erin", created_at: now - 5*3600e3 },
-    { _id: "demo6", building_id: bid, title: "Found AirPods case", type: "notice", likes_count: 1, summary: "Describe stickers to claim.", author: "Frank", created_at: now - 6*3600e3 },
-    { _id: "demo7", building_id: bid, title: "Snack stash restocked", type: "food", likes_count: 7, summary: "Free granola bars at desk.", author: "Gina", created_at: now - 7*3600e3 },
-    { _id: "demo8", building_id: bid, title: "Coding challenge night", type: "activity", likes_count: 9, summary: "Bring your laptop. Prizes.", author: "Harry", created_at: now - 8*3600e3 },
-    { _id: "demo9", building_id: bid, title: "Quiet zone reminder", type: "notice", likes_count: 4, summary: "Please keep voices low.", author: "Ivy", created_at: now - 9*3600e3 },
+    { _id: "demo2", building_id: bid, title: "Free pizza", type: "food", likes_count: 12, summary: "Grab a slice at 5pm in lobby.", author: "Bob", created_at: now - 2 * 3600e3 },
+    { _id: "demo3", building_id: bid, title: "Lost water bottle", type: "help", likes_count: 0, summary: "Blue Nalgene with stickers.", author: "Cathy", created_at: now - 3 * 3600e3 },
+    { _id: "demo4", building_id: bid, title: "Math tutoring drop-in", type: "study", likes_count: 5, summary: "Calc 2 help Tue/Thu evening.", author: "Dan", created_at: now - 4 * 3600e3 },
+    { _id: "demo5", building_id: bid, title: "Club fair booth setup", type: "activity", likes_count: 2, summary: "Volunteers needed tomorrow.", author: "Erin", created_at: now - 5 * 3600e3 },
+    { _id: "demo6", building_id: bid, title: "Found AirPods case", type: "notice", likes_count: 1, summary: "Describe stickers to claim.", author: "Frank", created_at: now - 6 * 3600e3 },
+    { _id: "demo7", building_id: bid, title: "Snack stash restocked", type: "food", likes_count: 7, summary: "Free granola bars at desk.", author: "Gina", created_at: now - 7 * 3600e3 },
+    { _id: "demo8", building_id: bid, title: "Coding challenge night", type: "activity", likes_count: 9, summary: "Bring your laptop. Prizes.", author: "Harry", created_at: now - 8 * 3600e3 },
+    { _id: "demo9", building_id: bid, title: "Quiet zone reminder", type: "notice", likes_count: 4, summary: "Please keep voices low.", author: "Ivy", created_at: now - 9 * 3600e3 },
   ];
 }
 
 export default function PostList({
   buildingId,
-  autoScroll = true,
-  expanded = false,         // show summary + meta when true
-  filterType = null,        // filter by type key
-  bottomPadding = 0,        // extra empty space at bottom to avoid being covered by sticky footer
-  cardHeight,               // NEW: fixed card height (px); default depends on `expanded`
+  autoScroll = false,     // not used in detail sidebar
+  expanded = true,        // show summary + meta
+  filterType = null,      // category filter
+  bottomPadding = 0,      // reserved space for sticky footer
+  cardHeight,             // if omitted we compute from row metrics below
 }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef(null);
-  const timerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Default fixed height (tweak these to taste)
-  const CARD_H = cardHeight ?? (expanded ? 110 : 72);
+  // --- Row metrics: 3 rows exactly (title, summary, meta) ---
+  const PAD = 12;
+  const GAP = 6;
+  const ROW_TITLE = 24;
+  const ROW_SUMMARY = 20;
+  const ROW_META = 18;
+  const GRID_HEIGHT = ROW_TITLE + (expanded ? ROW_SUMMARY + ROW_META + 2 * GAP : 0);
+  const CARD_FIXED = PAD * 2 + GRID_HEIGHT;
+  const CARD_HEIGHT = typeof cardHeight === "number" ? cardHeight : CARD_FIXED;
 
-  // Fetch events or fallback to demo
   useEffect(() => {
     if (!buildingId) {
       setEvents([]);
@@ -74,9 +100,9 @@ export default function PostList({
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/events?building_id=${encodeURIComponent(buildingId)}`);
-        if (!res.ok) throw new Error("bad status");
-        const data = await res.json();
+        const r = await fetch(`/api/events?building_id=${encodeURIComponent(buildingId)}`);
+        if (!r.ok) throw new Error("bad status");
+        const data = await r.json();
         if (!aborted) setEvents(Array.isArray(data) ? data : []);
       } catch {
         if (!aborted) setEvents(demoEvents(buildingId));
@@ -87,41 +113,6 @@ export default function PostList({
     return () => { aborted = true; };
   }, [buildingId]);
 
-  // Auto scroll until bottom then stop (only for hover card scenario)
-  useEffect(() => {
-    if (!autoScroll) return;
-    const el = wrapRef.current;
-    if (!el) return;
-
-    function start() {
-      stop();
-      timerRef.current = setInterval(() => {
-        if (!el) return;
-        const atBottom = el.scrollTop + el.clientHeight + 2 >= el.scrollHeight;
-        if (atBottom) {
-          stop();
-        } else {
-          el.scrollTop = el.scrollTop + 1;
-        }
-      }, 18);
-    }
-    function stop() {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-    start();
-    el.addEventListener("mouseenter", stop);
-    el.addEventListener("mouseleave", () => { if (!timerRef.current) start(); });
-    return () => {
-      stop();
-      el.removeEventListener("mouseenter", stop);
-      el.removeEventListener("mouseleave", start);
-    };
-  }, [events, autoScroll, buildingId]);
-
-  // Apply client-side filter
   const filtered = useMemo(() => {
     if (!filterType) return events;
     return events.filter(
@@ -129,28 +120,27 @@ export default function PostList({
     );
   }, [events, filterType]);
 
-  // Render
   return (
     <div
       ref={wrapRef}
       style={{
         flex: 1,
-        height: "100%",                // make this a real scroll box
+        height: "100%",
         overflowY: "auto",
-        overscrollBehavior: "contain", // keep wheel/touch inside this scroller
+        overscrollBehavior: "contain",
         paddingTop: 8,
-        paddingBottom: bottomPadding,  // room for sticky footer
+        paddingBottom: bottomPadding,
       }}
     >
-      {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading events…</div>}
+      {loading && <div style={{ padding: 8, color: "#6b7280" }}>Loading…</div>}
       {!loading && filtered.length === 0 && (
-        <div style={{ padding: 8, color: "#6b7280" }}>No events.</div>
+        <div style={{ padding: 8, color: "#6b7280" }}>No posts found.</div>
       )}
 
       {filtered.map((ev) => {
         const key = ev._id || ev.id;
         const type = String(ev.type || "other").toLowerCase();
-        const likes = ev.likes_count != null ? ev.likes_count : 0;
+        const likes = ev.likes_count ?? 0;
         const summary = ev.summary ?? "";
         const author = ev.author ?? "Anon";
         const created = ev.created_at ? new Date(ev.created_at) : null;
@@ -160,111 +150,127 @@ export default function PostList({
         return (
           <div
             key={key}
-            role="button"
-            tabIndex={0}
             onClick={goDetail}
-            onKeyDown={(e) => { if (e.key === "Enter") goDetail(); }}
             style={{
-              border: "1px solid #eef2f7",
-              borderRadius: 14,
-              padding: 12,
-              marginBottom: 12,
-              background: "#fff",
-              cursor: "pointer",
-              boxShadow: "0 1px 0 rgba(2,6,23,0.04)",
-
-              // === fixed height layout ===
-              height: CARD_H,                  // fixed height
+              // --- fixed outer frame ---
+              position: "relative",
+              height: CARD_HEIGHT,
+              minHeight: CARD_HEIGHT,
+              maxHeight: CARD_HEIGHT,
+              width: "100%",
               boxSizing: "border-box",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: expanded ? "space-between" : "center",
-              gap: expanded ? 6 : 0,
+              border: "1px solid #e5e7eb",
+              borderRadius: 14,
+              background: "#fff",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              marginBottom: 12,
+              padding: PAD,
+              overflow: "hidden",
+              cursor: "pointer",
+              contain: "layout paint",
             }}
-            title={ev.title}
           >
-            {/* First row: [badge] Title .......... ❤️ likes */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto" }}>
-              <span
-                style={{
-                  fontSize: 12,
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: TYPE_BG[type] || TYPE_BG.other,
-                  color: TYPE_FG[type] || TYPE_FG.other,
-                  whiteSpace: "nowrap",
-                  flex: "0 0 auto",
-                }}
-              >
-                {TYPE_LABEL[type] || TYPE_LABEL.other}
-              </span>
-
-              <div
-                style={{
-                  fontWeight: 800,
-                  fontSize: 18,
-                  letterSpacing: 0.2,
-                  flex: "1 1 auto",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  color: "#0f172a",
-                }}
-              >
-                {ev.title}
-              </div>
-
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 14,
-                  color: "#ef4444",
-                  flex: "0 0 auto",
-                }}
-                title={`${likes} likes`}
-              >
-                <span>❤️</span>
-                <span style={{ color: "#6b7280", fontWeight: 700 }}>{likes}</span>
-              </div>
+            {/* likes at top-right */}
+            <div
+              style={{
+                position: "absolute",
+                top: PAD,
+                right: PAD,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+              aria-label="likes"
+            >
+              <span style={{ color: "#ef4444" }}>❤️</span>
+              <span style={{ fontWeight: 700, color: "#6b7280" }}>{likes}</span>
             </div>
 
-            {/* Second row: summary (expanded only) */}
-            {expanded && (
-              <div
-                style={{
-                  color: "#334155",
-                  fontSize: 14,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  flex: "0 0 auto", // do not grow
-                  minHeight: 18,     // keep row height even if empty
-                }}
-                title={summary || " "}
-              >
-                {summary || " "}
-              </div>
-            )}
+            {/* inner grid: 3 fixed rows */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateRows: expanded
+                  ? `${ROW_TITLE}px ${ROW_SUMMARY}px ${ROW_META}px`
+                  : `${ROW_TITLE}px`,
+                rowGap: expanded ? `${GAP}px` : "0px",
+                height: GRID_HEIGHT,
+              }}
+            >
+              {/* Row 1: badge + title */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: ROW_TITLE, paddingRight: 36 }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    padding: "5px 10px",
+                    borderRadius: 999,
+                    background: TYPE_BG[type] || TYPE_BG.other,
+                    color: TYPE_FG[type] || TYPE_FG.other,
+                    whiteSpace: "nowrap",
+                    flex: "0 0 auto",
+                  }}
+                >
+                  {TYPE_LABEL[type] || TYPE_LABEL.other}
+                </span>
 
-            {/* Bottom row: meta (expanded only) */}
-            {expanded && (
-              <div
-                style={{
-                  color: "#64748b",
-                  fontSize: 12,
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  flex: "0 0 auto", // do not grow
-                  minHeight: 16,     // keep row height stable
-                }}
-              >
-                <span>by {author}</span>
-                {created && <span>· {created.toLocaleString()}</span>}
+                <div
+                  style={{
+                    flex: 1,
+                    fontWeight: 800,
+                    fontSize: 16,
+                    color: "#0f172a",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    lineHeight: `${ROW_TITLE}px`,
+                  }}
+                >
+                  {ev.title}
+                </div>
               </div>
-            )}
+
+              {/* Row 2: summary */}
+              {expanded && (
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "#334155",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minHeight: ROW_SUMMARY,
+                    lineHeight: `${ROW_SUMMARY}px`,
+                  }}
+                >
+                  {summary || " "}
+                </div>
+              )}
+
+              {/* Row 3: meta with relative/absolute time */}
+              {expanded && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#64748b",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    minHeight: ROW_META,
+                    lineHeight: `${ROW_META}px`,
+                  }}
+                >
+                  <span>by {author}</span>
+                  {created && (
+                    <span title={formatAbsolute(created.getTime())}>
+                      · {formatRelativeOrAbsolute(created.getTime())}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         );
       })}

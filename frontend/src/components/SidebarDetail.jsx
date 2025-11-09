@@ -1,18 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PostList from "./PostList";
 
-/**
- * SidebarDetail (for PostDetailPage)
- * - Building title
- * - One-line emoji chips (no "Filter" caption)
- * - Scrollable post list (expanded cards)
- * - Sticky bottom "Create a Post" that never covers the list
- */
 export default function SidebarDetail({ building }) {
   if (!building) return null;
 
-  const name =
-    building?.properties?.name ?? building?.name ?? "Building";
+  const navigate = useNavigate();
+
+  const name = building?.properties?.name ?? building?.name ?? "Building";
   const buildingId =
     building?.id ??
     building?._id ??
@@ -21,10 +16,10 @@ export default function SidebarDetail({ building }) {
 
   const [filter, setFilter] = useState(null);
 
+  // Fixed category chips
   const CATS = [
     { key: "notice",    label: "Notice",    emoji: "📢" },
     { key: "help",      label: "Help",      emoji: "🆘" },
-    { key: "event",     label: "Event",     emoji: "📅" },
     { key: "food",      label: "Food",      emoji: "🍔" },
     { key: "emergency", label: "Emergency", emoji: "🚨" },
     { key: "study",     label: "Study",     emoji: "📚" },
@@ -32,37 +27,74 @@ export default function SidebarDetail({ building }) {
     { key: "other",     label: "Others",    emoji: "➕" },
   ];
 
-  // Height reserved for the sticky footer
-  const FOOTER_SPACE = 88;
+  // Layout constants
+  const SIDEBAR_WIDTH = 400;
+  const BUTTON_HEIGHT = 44;
+  const BOTTOM_GAP = 12;
+  const FOOTER_SPACE = BUTTON_HEIGHT + BOTTOM_GAP;
 
   return (
     <aside
       style={{
         height: "100%",
+        width: SIDEBAR_WIDTH,
+        minWidth: SIDEBAR_WIDTH,
+        maxWidth: SIDEBAR_WIDTH,
         display: "flex",
         flexDirection: "column",
         padding: 16,
         background: "#fff",
         boxSizing: "border-box",
-        minHeight: 0, // allow children to create scroll
+        minHeight: 0,
+        position: "relative",
       }}
     >
-      {/* Title */}
-      <h2
+      {/* Header: title + Leave button */}
+      <div
         style={{
-          margin: "8px 0 6px",
-          fontSize: 18,
-          fontWeight: 700,
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          textOverflow: "ellipsis",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 6,
         }}
-        title={name}
       >
-        {name}
-      </h2>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 22,
+            fontWeight: 800,
+            color: "#0f172a",
+            letterSpacing: 0.3,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+          title={name}
+        >
+          {name}
+        </h2>
 
-      {/* One-line emoji row */}
+        {/* Leave the building button */}
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            border: "1px solid #e2e8f0",
+            background: "#fff",
+            color: "#334155",
+            borderRadius: 8,
+            fontSize: 13,
+            padding: "6px 10px",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#f8fafc")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
+        >
+          Leave building
+        </button>
+      </div>
+
+      {/* Category chips */}
       <div
         style={{
           display: "flex",
@@ -71,7 +103,7 @@ export default function SidebarDetail({ building }) {
           overflowY: "hidden",
           whiteSpace: "nowrap",
           paddingBottom: 4,
-          marginBottom: 8,
+          marginBottom: 10,
         }}
       >
         {CATS.map((c) => {
@@ -100,7 +132,7 @@ export default function SidebarDetail({ building }) {
         })}
       </div>
 
-      {/* Scrollable list area wrapper */}
+      {/* Scrollable list */}
       <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
         <PostList
           buildingId={buildingId}
@@ -111,12 +143,18 @@ export default function SidebarDetail({ building }) {
         />
       </div>
 
-      {/* Sticky footer button (never covers the list) */}
-      <div style={{ position: "sticky", bottom: 8, paddingTop: 8 }}>
+      {/* Sticky create button */}
+      <div style={{ position: "sticky", bottom: BOTTOM_GAP, paddingTop: 8 }}>
         <button
           className="btn-primary"
+          style={{
+            width: "100%",
+            height: BUTTON_HEIGHT,
+            lineHeight: `${BUTTON_HEIGHT}px`,
+            borderRadius: 10,
+            position: "static",
+          }}
           onClick={() => alert("Open post editor (right side)")}
-          style={{ width: "100%", position: "static" }}
         >
           Create a Post
         </button>
