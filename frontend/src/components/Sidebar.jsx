@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
  */
 export default function Sidebar({
   building,
+  highlightEventId,
   pinned = false,
   onUnpin,
   onMouseEnterSidebar,
@@ -223,6 +224,7 @@ export default function Sidebar({
           <PostList 
           buildingId={buildingId} 
           events={events}
+          highlightEventId={highlightEventId}
            />
         </div>
       </motion.aside>
