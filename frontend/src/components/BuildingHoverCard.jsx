@@ -81,7 +81,7 @@ export default function BuildingHoverCard() {
       </div>
       <div className="hover-card-footer">
         {!locked ? <span className="muted">Double-click building to pin</span> :
-          <button className="btn-ghost" onClick={() => { setLocked(false); setVisible(false) }}>Unpin ×</button>}
+          <button className="btn-ghost" onClick={() => { setLocked(false); setVisible(false) }}>exist ×</button>}
       </div>
     </div>
   )

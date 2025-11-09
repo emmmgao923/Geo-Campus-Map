@@ -1,6 +1,11 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import firstPostImg from "../assets/1.png";
+// import firstPostImg from "../assets/1.png";
+import first_like from "../assets/first_like.png";
+import first_post from "../assets/first_post.png";
+import first_help from "../assets/first_help.png";
+import ten_like from "../assets/ten_helps.png";
+
 import { useAuth } from "../context/AuthContext.jsx";
 
 /* ========= Glory Path: Rank & Levels ========= */
@@ -24,9 +29,9 @@ const LEVELS = [
 
 /* ========= Achievements (for Glory Path tab) ========= */
 const ACHIEVEMENTS = [
-  { id: "first_post",   name: "First Post",      icon: "📝", points: 10,  desc: "Create your first post.",       status: "unlocked",  image: firstPostImg, unlockedAt: "2025-11-04" },
-  { id: "first_answer", name: "First Answer",    icon: "💬", points: 15,  desc: "Answer someone’s question.",    status: "unlocked",  unlockedAt: "2025-11-05" },
-  { id: "first_accept", name: "First Accepted",  icon: "✅", points: 40,  desc: "Your answer got accepted.",     status: "inprogress" },
+  { id: "first_post",   name: "First Post",      icon: "📝", points: 10,  desc: "Create your first post.",       status: "unlocked",  image: first_post, unlockedAt: "2025-11-04" },
+  { id: "first_answer", name: "First Answer",    icon: "💬", points: 15,  desc: "Answer someone’s question.",    status: "unlocked",  image: first_help, unlockedAt: "2025-11-05" },
+  { id: "first_accept", name: "First Accepted",  icon: "✅", points: 40,  desc: "Your answer got accepted.",     status: "inprogress", },
   { id: "five_answers", name: "5 Answers",       icon: "✋", points: 30,  desc: "Post five answers.",            status: "inprogress" },
   { id: "streak7",      name: "7-Day Streak",    icon: "📆", points: 70,  desc: "Help once per day for 7 days.", status: "locked" },
   { id: "upvotes50",    name: "+50 Upvotes",     icon: "⭐", points: 100, desc: "Receive 50 total upvotes.",     status: "locked" },

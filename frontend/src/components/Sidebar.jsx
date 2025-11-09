@@ -199,8 +199,8 @@ export default function Sidebar({
 
         <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>
           {pinned
-            ? "已固定：可以手动滚动浏览帖子"
-            : "悬停模式：帖子会自动缓慢滚动"}
+            ? "What's happenning now?"
+            : "What's happenning now?"}
         </p>
 
         <div style={{ marginTop: 8, borderTop: "1px solid #eee" }} />
