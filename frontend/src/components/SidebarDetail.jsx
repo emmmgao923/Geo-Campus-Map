@@ -1,40 +1,60 @@
 // SidebarDetail.jsx
-// Left sidebar (Mission Zone): fixed width, emoji chips, scrollable mission list,
-// and a sticky "Start New Quest" button that triggers the right-panel editor
-// via a window CustomEvent (no route change).
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PostList from "./PostList";
+import buildingNames from "../data/buildings.json";
 
-export default function SidebarDetail({ building }) {
-  if (!building) return null;
+function getBuildingName(buildingId) {
+  if (!buildingId) return "Building";
+  return buildingNames[buildingId] || "Building";
+}
 
+const API_BASE = "http://localhost:8000/api/events"; 
+
+export default function SidebarDetail({ buildingId, selectedEventId }) {
   const navigate = useNavigate();
 
-  const name = building?.properties?.name ?? building?.name ?? "Building";
-  const buildingId =
-    building?.id ??
-    building?._id ??
-    building?.properties?.id ??
-    building?.properties?._id;
+  if (!buildingId) return null;
 
+  const name = getBuildingName(buildingId);
   const [filter, setFilter] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // === Gamified category chips ===
-  const CATS = [
-    { key: "notice",    label: "📢 Announcements", emoji: "📢" },
-    { key: "help",      label: "🆘 Help Requests", emoji: "🆘" },
-    { key: "food",      label: "🍔 Food Drops", emoji: "🍔" },
-    { key: "emergency", label: "🚨 Alerts", emoji: "🚨" },
-    { key: "study",     label: "📚 Study Missions", emoji: "📚" },
-    { key: "activity",  label: "🎯 Campus Events", emoji: "🎯" },
-    { key: "other",     label: "➕ Side Quests", emoji: "➕" },
-  ];
 
-  // Notify SearchBar (page2) which building we're in.
   useEffect(() => {
-    if (!buildingId) return;
+    let cancelled = false;
+
+    async function fetchEvents() {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/${buildingId}`);
+        if (!res.ok) {
+          console.error("Failed to fetch events", res.status);
+          if (!cancelled) setEvents([]);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setEvents(Array.isArray(data) ? data : []);
+        }
+      } catch (e) {
+        console.error("Error fetching events for building", buildingId, e);
+        if (!cancelled) setEvents([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchEvents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildingId]);
+
+  // 通知其他组件当前 building（你原逻辑）
+  useEffect(() => {
     window.dispatchEvent(
       new CustomEvent("app:current-building", {
         detail: { buildingId, name },
@@ -42,13 +62,21 @@ export default function SidebarDetail({ building }) {
     );
   }, [buildingId, name]);
 
-  // Layout constants
+  const CATS = [
+    { key: "notice", label: "📢 Announcements", emoji: "📢" },
+    { key: "help", label: "🆘 Help Requests", emoji: "🆘" },
+    { key: "food", label: "🍔 Food Drops", emoji: "🍔" },
+    { key: "emergency", label: "🚨 Alerts", emoji: "🚨" },
+    { key: "study", label: "📚 Study Missions", emoji: "📚" },
+    { key: "activity", label: "🎯 Campus Events", emoji: "🎯" },
+    { key: "other", label: "➕ Side Quests", emoji: "➕" },
+  ];
+
   const SIDEBAR_WIDTH = 400;
   const BUTTON_HEIGHT = 44;
   const BOTTOM_GAP = 12;
   const FOOTER_SPACE = BUTTON_HEIGHT + BOTTOM_GAP;
 
-  // Trigger editor in the right column without navigation.
   const openEditor = () => {
     window.dispatchEvent(
       new CustomEvent("app:open-editor", {
@@ -57,13 +85,12 @@ export default function SidebarDetail({ building }) {
     );
   };
 
-  // Header text: zone name
-  const headerText = `Current loc: ${name} `;
+  const headerText = `Current loc: ${name}`;
 
   return (
     <aside
       style={{
-        height: "100%",
+        height: "100vh",
         width: SIDEBAR_WIDTH,
         minWidth: SIDEBAR_WIDTH,
         maxWidth: SIDEBAR_WIDTH,
@@ -72,11 +99,9 @@ export default function SidebarDetail({ building }) {
         padding: 16,
         background: "#fff",
         boxSizing: "border-box",
-        minHeight: 0,
-        position: "relative",
       }}
     >
-      {/* Header: zone name + exit button */}
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -91,18 +116,15 @@ export default function SidebarDetail({ building }) {
             fontSize: 20,
             fontWeight: 800,
             color: "#0f172a",
-            letterSpacing: 0.3,
-            overflow: "hidden",
             whiteSpace: "nowrap",
+            overflow: "hidden",
             textOverflow: "ellipsis",
           }}
           title={headerText}
-          aria-label={headerText}
         >
           {headerText}
         </h2>
 
-        {/* Exit zone button */}
         <button
           onClick={() => navigate("/")}
           style={{
@@ -113,23 +135,18 @@ export default function SidebarDetail({ building }) {
             fontSize: 13,
             padding: "6px 10px",
             cursor: "pointer",
-            flexShrink: 0,
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#f8fafc")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
         >
           Exit
         </button>
       </div>
 
-      {/* Category chips (quest types) */}
+      {/* Category chips */}
       <div
         style={{
           display: "flex",
           gap: 8,
           overflowX: "auto",
-          overflowY: "hidden",
-          whiteSpace: "nowrap",
           paddingBottom: 4,
           marginBottom: 10,
         }}
@@ -139,9 +156,9 @@ export default function SidebarDetail({ building }) {
           return (
             <button
               key={c.key}
-              title={c.label}
-              aria-label={c.label}
-              onClick={() => setFilter((cur) => (cur === c.key ? null : c.key))}
+              onClick={() =>
+                setFilter((cur) => (cur === c.key ? null : c.key))
+              }
               style={{
                 height: 30,
                 width: 30,
@@ -152,36 +169,38 @@ export default function SidebarDetail({ building }) {
                 display: "grid",
                 placeItems: "center",
                 cursor: "pointer",
-                transition: "all 0.15s ease",
               }}
             >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{c.emoji}</span>
+              <span style={{ fontSize: 16 }}>{c.emoji}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Scrollable quest list */}
-      <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
-        <PostList
-          buildingId={buildingId}
-          autoScroll={false}
-          expanded={true}
-          filterType={filter}
-          bottomPadding={FOOTER_SPACE}
-        />
+      {/* 列表区域 */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        {loading ? (
+          <div style={{ padding: 8, color: "#6b7280" }}>Loading...</div>
+        ) : (
+          <PostList
+            buildingId={buildingId}
+            events={events}
+            expanded={true}
+            filterType={filter}
+            bottomPadding={FOOTER_SPACE}
+            highlightEventId={selectedEventId} // 用 URL eventId 高亮当前帖子
+          />
+        )}
       </div>
 
-      {/* Sticky create quest button */}
+      {/* Sticky 创建按钮 */}
       <div style={{ position: "sticky", bottom: BOTTOM_GAP, paddingTop: 8 }}>
         <button
           className="btn-primary"
           style={{
             width: "100%",
             height: BUTTON_HEIGHT,
-            lineHeight: `${BUTTON_HEIGHT}px`,
             borderRadius: 10,
-            position: "static",
             fontWeight: 600,
           }}
           onClick={openEditor}
@@ -192,3 +211,4 @@ export default function SidebarDetail({ building }) {
     </aside>
   );
 }
+

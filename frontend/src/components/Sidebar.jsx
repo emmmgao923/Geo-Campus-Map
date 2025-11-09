@@ -2,12 +2,7 @@ import React, { useEffect, useRef } from "react";
 import PostList from "./PostList";
 import { motion, AnimatePresence } from "framer-motion";
 
-/**
- * Sidebar
- * - Auto-scrolls the posts list when NOT pinned (hover mode).
- * - Allows manual scrolling when pinned (click-to-pin mode).
- * - Resets scrollTop when the hovered building changes.
- */
+
 export default function Sidebar({
   building,
   highlightEventId,
