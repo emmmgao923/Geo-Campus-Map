@@ -158,7 +158,7 @@ const CARD_FIXED = PAD * 2 + GRID_HEIGHT;
         const type = String(ev.type || "other").toLowerCase();
         const likes = ev.likes_count ?? 0;
         const summary = ev.content ?? "";
-        const author = ev.author ?? "Anon";
+        const author = ev.user_id ?? "anon";
         const created = ev.timestamp ? new Date(ev.timestamp) : null;
 
 

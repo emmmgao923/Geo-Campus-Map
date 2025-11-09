@@ -19,7 +19,7 @@ async def create_comment(comment: Comment):
 
 
 @router.get("/{event_id}", response_model=List[Comment])
-async def get_comments_by_event(event_id: int):
+async def get_comments_by_event(event_id: str):
     """Return all comments under a specific event (by numeric ID)."""
     comments = await db["comments"].find({"event_id": event_id}).to_list(100)
     for c in comments:
